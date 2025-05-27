@@ -3,8 +3,6 @@ import datetime
 import sys
 import traceback
 import re
-import socket
-import uuid
 from io import StringIO
 from smolagents import CodeAgent, LiteLLMModel
 
@@ -149,31 +147,14 @@ TASKS = [
 ]
 
 
-# Create a unique log directory for this run
-BASE_LOG_DIR = "/home/thomas/agents/log"
+# Create log directory if it doesn't exist
+LOG_DIR = "/home/thomas/agents/log"
+os.makedirs(LOG_DIR, exist_ok=True)
 
-# Generate a unique log directory name that's distinctive across machines
-def create_unique_log_dir():
-    # Get hostname to differentiate between machines
-    hostname = socket.gethostname()
-    # Get current timestamp
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    # Add a unique ID for extra uniqueness
-    unique_id = str(uuid.uuid4())[:8]
-    # Create the unique directory name
-    log_dir_name = f"{hostname}_{timestamp}_{unique_id}"
-    # Full path
-    log_dir = os.path.join(BASE_LOG_DIR, log_dir_name)
-    # Create the directory
-    os.makedirs(log_dir, exist_ok=True)
-    return log_dir
-
-# Create the unique log directory for this run
-LOG_DIR = create_unique_log_dir()
-
-# Generate a log filename for each task within the unique log directory
+# Generate a unique log filename for each task
 def get_log_filename(task_idx):
-    return os.path.join(LOG_DIR, f"task_{task_idx+1}.txt")
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    return os.path.join(LOG_DIR, f"task_{task_idx+1}_{timestamp}.txt")
 
 # Create a log capture class that will capture and clean output
 class LogCapture:
@@ -218,33 +199,23 @@ try:
             print(f"{'='*80}\n")
             
             # Run the task and capture output
-            response = agent.generate(task)
+            try:
+                output = agent.run(task)
+                print(f"\nOutput:\n{output}\n")
+            except Exception as e:
+                print(f"\nERROR: {e}\n")
+                print(traceback.format_exc())
+                
+            print(f"Task {idx+1} complete.")
+            print(f"{'-'*60}")
             
-            # Print response
-            print(f"\nResponse:")
-            print(f"{'-'*80}")
-            print(response)
-            print(f"{'-'*80}")
-            
-        except Exception as e:
-            print(f"Error executing task: {e}")
-            traceback.print_exc()
         finally:
-            # Reset stdout/stderr
+            # Restore original stdout/stderr
             sys.stdout = orig_stdout
             sys.stderr = orig_stderr
-            # Close the log capture
             log_capture.close()
+            print(f"Task {idx+1} complete. Log saved to {log_file}")
             
-            # Print progress
-            print(f"Completed task {idx+1}/{len(TASKS)}")
-            
-except KeyboardInterrupt:
-    print("\nProcess interrupted by user")
-except Exception as e:
-    print(f"Fatal error: {e}")
-    traceback.print_exc()
-finally:
-    print("\n" + "*"*80)
-    print(f"Execution completed. Logs stored in: {LOG_DIR}")
-    print("*"*80)
+except Exception as main_exc:
+    print("FATAL ERROR in loop.py:")
+    print(traceback.format_exc())
