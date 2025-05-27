@@ -3,6 +3,7 @@ import datetime
 import sys
 import traceback
 import re
+import json
 from io import StringIO
 from smolagents import CodeAgent, LiteLLMModel
 
@@ -30,121 +31,20 @@ model = LiteLLMModel(
 agent = CodeAgent(tools=[], model=model, add_base_tools=True)
 agent.logger.level = 2
 
-# Define your tasks here; you can modify this list
-TASKS = [
-    "What is the capital of France?",
-    "Who wrote 'Pride and Prejudice'?",
-    "What is the square root of 256?",
-    "Summarize the theory of relativity in one sentence.",
-    "List the first 5 prime numbers.",
-    "Translate 'Good morning' to Spanish.",
-    "What is the chemical symbol for gold?",
-    "Who painted the Mona Lisa?",
-    "What is the distance from Earth to the Moon?",
-    "Give me a haiku about spring.",
-    "What is the boiling point of water in Celsius?",
-    "Who was the first person to walk on the moon?",
-    "What is the largest mammal?",
-    "Explain quantum entanglement simply.",
-    "What is the capital city of Japan?",
-    "Name three programming languages.",
-    "What is the tallest mountain in the world?",
-    "Who discovered penicillin?",
-    "What is the speed of light?",
-    "Give a synonym for 'happy'.",
-    "What is 15 multiplied by 7?",
-    "Write a short poem about the ocean.",
-    "What year did World War II end?",
-    "Who is known as the father of computers?",
-    "What is the currency of Brazil?",
-    "Define 'photosynthesis'.",
-    "What is the largest planet in our solar system?",
-    "Who wrote '1984'?",
-    "What is the freezing point of water in Fahrenheit?",
-    "Name a famous Greek philosopher.",
-    "What is the formula for the area of a circle?",
-    "What is the smallest prime number?",
-    "Who was the first President of the United States?",
-    "What is the chemical formula for water?",
-    "Name a mammal that can fly.",
-    "What is the capital of Canada?",
-    "What is 12 squared?",
-    "Who painted the ceiling of the Sistine Chapel?",
-    "What is the main ingredient in guacamole?",
-    "What is the largest desert in the world?",
-    "Who is the author of 'The Hobbit'?",
-    "What is the Pythagorean theorem?",
-    "What is the value of pi to three decimal places?",
-    "Name a country that starts with 'Z'.",
-    "What is the longest river in the world?",
-    "Who invented the telephone?",
-    "What is the capital of Australia?",
-    "What is the hardest natural substance?",
-    "Name three types of clouds.",
-    "What is the atomic number of carbon?",
-    "Who is the Greek god of the sea?",
-    "What is the national language of Brazil?",
-    "What is the sum of the angles in a triangle?",
-    "Name a famous composer from the Classical period.",
-    "What is the process by which plants make food?",
-    "Who was the first female Nobel laureate?",
-    "What is the main gas found in the air we breathe?",
-    "What is the capital of Egypt?",
-    "What is the largest ocean on Earth?",
-    "Who wrote 'Hamlet'?",
-    "What is the symbol for potassium?",
-    "What is the square root of 144?",
-    "Name a continent that lies entirely in the Southern Hemisphere.",
-    "Who is known as the 'Maid of Orléans'?",
-    "What is the chemical symbol for silver?",
-    "What is the most abundant element in the universe?",
-    "Who painted 'Starry Night'?",
-    "What is the capital of South Korea?",
-    "What is the main ingredient in hummus?",
-    "What is the tallest building in the world?",
-    "Who discovered gravity?",
-    "What is the capital of Italy?",
-    "What is the process of cell division called?",
-    "What is the largest island in the world?",
-    "Who is the author of 'To Kill a Mockingbird'?",
-    "What is the freezing point of water in Celsius?",
-    "What is the capital of Russia?",
-    "What is the currency of Japan?",
-    "Who invented the light bulb?",
-    "What is the main language spoken in Egypt?",
-    "What is the largest bone in the human body?",
-    "Who is the Roman god of war?",
-    "What is the capital of Mexico?",
-    "What is the main ingredient in sushi?",
-    "What is the largest continent?",
-    "Who wrote 'The Odyssey'?",
-    "What is the chemical formula for table salt?",
-    "What is the capital of Germany?",
-    "What is the process by which water changes from liquid to gas?",
-    "Who is the founder of Microsoft?",
-    "What is the capital of India?",
-    "What is the hardest known material?",
-    "Who is the author of 'Moby Dick'?",
-    "What is the currency of the United Kingdom?",
-    "What is the capital of Argentina?",
-    "What is the main ingredient in paella?",
-    "What is the tallest animal in the world?",
-    "Who discovered America?",
-    "What is the capital of Spain?",
-    "What is the chemical symbol for iron?",
-    "What is the main ingredient in pizza?",
-    "Who is the author of 'Don Quixote'?",
-    "What is the capital of Turkey?",
-    "What is the largest lake in Africa?",
-    "Who is the Greek goddess of wisdom?",
-    "What is the boiling point of water in Fahrenheit?",
-    "What is the main ingredient in falafel?",
-    "What is the capital of Sweden?",
-    "What is the process by which ice turns to water?",
-    "Who is the author of 'The Divine Comedy'?",
-    "What is the capital of Norway?",
-    "What is the main ingredient in ratatouille?",
-]
+# Load tasks from task.json file
+try:
+    with open('task.json', 'r') as f:
+        TASKS = json.load(f)
+    print(f"Successfully loaded {len(TASKS)} tasks from task.json")
+except Exception as e:
+    print(f"Error loading tasks from task.json: {e}")
+    # Fallback to a small set of tasks in case of error
+    TASKS = [
+        "What is the capital of France?",
+        "Who wrote 'Pride and Prejudice'?",
+        "What is the square root of 256?"
+    ]
+    print(f"Using {len(TASKS)} fallback tasks instead")
 
 
 # Create log directory if it doesn't exist
