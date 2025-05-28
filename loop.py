@@ -22,7 +22,7 @@ def strip_ansi_codes(text):
 
 # Model setup (same as run.py)
 model = LiteLLMModel(
-    model_id="ollama_chat/qwen3:14b",
+    model_id="ollama_chat/hf.co/Triangle104/Dria-Agent-a-3B-abliterated-Q4_K_M-GGUF:Q4_K_M",
     api_base="http://localhost:11434",
     api_key="YOUR_API_KEY",
     num_ctx=8192,
