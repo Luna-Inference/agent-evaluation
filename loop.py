@@ -48,7 +48,7 @@ except Exception as e:
 
 
 # Create log directory if it doesn't exist
-LOG_DIR = "/home/thomas/agents/log"
+LOG_DIR = "./log"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Generate a unique log filename for each task
