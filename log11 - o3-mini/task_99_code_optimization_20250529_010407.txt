@@ -1,0 +1,179 @@
+
+================================================================================
+Task 99/183: Improve the performance of this database query that's causing slow page loads.
+Category: Creative & Generation Tasks | Type: code-optimization | Difficulty: medium
+================================================================================
+
+╭─────────────────────────────────────────────────────────────── New run ────────────────────────────────────────────────────────────────╮
+│                                                                                                                                        │
+│ Improve the performance of this database query that's causing slow page loads.                                                         │
+│                                                                                                                                        │
+╰─ LiteLLMModel - azure/o3-mini ─────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 1 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought: We need to provide advice for improving database query performance. Common approaches include:                                   
+1. Use EXPLAIN to understand the query plan and identify bottlenecks.                                                                     
+2. Ensure your query is selecting only the needed columns (avoid SELECT *).                                                               
+3. Add proper indexes on the columns used in WHERE, JOIN, and ORDER BY clauses.                                                           
+4. Consider breaking complex queries into simpler ones or using temporary tables/CTEs if beneficial.                                      
+5. If you’re using subqueries, explore rewriting them as JOINs.                                                                           
+6. Limit the number of returned rows if possible (with LIMIT).                                                                            
+7. Consider caching results if the data doesn’t change often.                                                                             
+                                                                                                                                          
+I will now show a code snippet illustrating how you might diagnose and then adjust a SQL query to improve its performance by applying some
+of these principles.                                                                                                                      
+                                                                                                                                          
+Code:                                                                                                                                     
+```py                                                                                                                                     
+# Example of a slow query:                                                                                                                
+# SELECT * FROM orders                                                                                                                    
+# JOIN customers ON orders.customer_id = customers.id                                                                                     
+# WHERE orders.created_at > '2023-01-01'                                                                                                  
+# ORDER BY orders.created_at DESC;                                                                                                        
+                                                                                                                                          
+# Improvement steps:                                                                                                                      
+                                                                                                                                          
+# 1. Use EXPLAIN to view the query plan.                                                                                                  
+# For instance, execute in your SQL client:                                                                                               
+# EXPLAIN SELECT orders.id, orders.created_at, customers.name                                                                             
+# FROM orders                                                                                                                             
+# JOIN customers ON orders.customer_id = customers.id                                                                                     
+# WHERE orders.created_at > '2023-01-01'                                                                                                  
+# ORDER BY orders.created_at DESC;                                                                                                        
+                                                                                                                                          
+# 2. Select only needed columns instead of "*".                                                                                           
+improved_query = """                                                                                                                      
+SELECT orders.id, orders.created_at, customers.name                                                                                       
+FROM orders                                                                                                                               
+INNER JOIN customers ON orders.customer_id = customers.id                                                                                 
+WHERE orders.created_at > '2023-01-01'                                                                                                    
+ORDER BY orders.created_at DESC                                                                                                           
+LIMIT 100;                                                                                                                                
+"""                                                                                                                                       
+                                                                                                                                          
+# 3. Ensure proper indexes exist:                                                                                                         
+#    a. An index on orders.created_at                                                                                                     
+#    b. An index on orders.customer_id (or a composite index on (customer_id, created_at) if applicable)                                  
+#    c. If filtering on customer fields, indexes on those may also help.                                                                  
+#                                                                                                                                         
+# For example, in SQL you might run:                                                                                                      
+# CREATE INDEX idx_orders_created_at ON orders(created_at);                                                                               
+# CREATE INDEX idx_orders_customer_id_created_at ON orders(customer_id, created_at);                                                      
+#                                                                                                                                         
+# 4. Additional steps could include query caching or using a materialized view for highly complex                                         
+#    aggregation queries, if the data is not updated frequently.                                                                          
+#                                                                                                                                         
+# Once you have made these changes, test the query again to confirm that page load times have improved.                                   
+print("Recommended improvements:\n", improved_query)                                                                                      
+```                                                                                                                                       
+ ─ Executing parsed code: ─────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  # Example of a slow query:                                                                                                              
+  # SELECT * FROM orders                                                                                                                  
+  # JOIN customers ON orders.customer_id = customers.id                                                                                   
+  # WHERE orders.created_at > '2023-01-01'                                                                                                
+  # ORDER BY orders.created_at DESC;                                                                                                      
+                                                                                                                                          
+  # Improvement steps:                                                                                                                    
+                                                                                                                                          
+  # 1. Use EXPLAIN to view the query plan.                                                                                                
+  # For instance, execute in your SQL client:                                                                                             
+  # EXPLAIN SELECT orders.id, orders.created_at, customers.name                                                                           
+  # FROM orders                                                                                                                           
+  # JOIN customers ON orders.customer_id = customers.id                                                                                   
+  # WHERE orders.created_at > '2023-01-01'                                                                                                
+  # ORDER BY orders.created_at DESC;                                                                                                      
+                                                                                                                                          
+  # 2. Select only needed columns instead of "*".                                                                                         
+  improved_query = """                                                                                                                    
+  SELECT orders.id, orders.created_at, customers.name                                                                                     
+  FROM orders                                                                                                                             
+  INNER JOIN customers ON orders.customer_id = customers.id                                                                               
+  WHERE orders.created_at > '2023-01-01'                                                                                                  
+  ORDER BY orders.created_at DESC                                                                                                         
+  LIMIT 100;                                                                                                                              
+  """                                                                                                                                     
+                                                                                                                                          
+  # 3. Ensure proper indexes exist:                                                                                                       
+  #    a. An index on orders.created_at                                                                                                   
+  #    b. An index on orders.customer_id (or a composite index on (customer_id, created_at) if applicable)                                
+  #    c. If filtering on customer fields, indexes on those may also help.                                                                
+  #                                                                                                                                       
+  # For example, in SQL you might run:                                                                                                    
+  # CREATE INDEX idx_orders_created_at ON orders(created_at);                                                                             
+  # CREATE INDEX idx_orders_customer_id_created_at ON orders(customer_id, created_at);                                                    
+  #                                                                                                                                       
+  # 4. Additional steps could include query caching or using a materialized view for highly complex                                       
+  #    aggregation queries, if the data is not updated frequently.                                                                        
+  #                                                                                                                                       
+  # Once you have made these changes, test the query again to confirm that page load times have improved.                                 
+  print("Recommended improvements:\n", improved_query)                                                                                    
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Execution logs:
+Recommended improvements:
+ 
+SELECT orders.id, orders.created_at, customers.name
+FROM orders
+INNER JOIN customers ON orders.customer_id = customers.id
+WHERE orders.created_at > '2023-01-01'
+ORDER BY orders.created_at DESC
+LIMIT 100;
+
+
+Out: None
+[Step 1: Duration 7.23 seconds| Input tokens: 2,061 | Output tokens: 922]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought: The query has been optimized by selecting only needed columns (orders.id, orders.created_at, customers.name) instead of using    
+SELECT *. An INNER JOIN is maintained, and a LIMIT is added to reduce the number of rows returned. Additionally, adding indexes on        
+orders.created_at and on orders.customer_id (or a composite index on (customer_id, created_at)) will boost performance. I will now provide
+the final recommended improved query and the indexing advice as our final answer.                                                         
+                                                                                                                                          
+Code:                                                                                                                                     
+```py                                                                                                                                     
+final_answer("To improve performance, use the following query instead:\n\nSELECT orders.id, orders.created_at, customers.name\nFROM       
+orders\nINNER JOIN customers ON orders.customer_id = customers.id\nWHERE orders.created_at > '2023-01-01'\nORDER BY orders.created_at     
+DESC\nLIMIT 100;\n\nAlso, add indexes as follows:\n1. CREATE INDEX idx_orders_created_at ON orders(created_at);\n2. CREATE INDEX          
+idx_orders_customer_id_created_at ON orders(customer_id, created_at);\n\nThis should reduce the data load and improve the query           
+performance.")                                                                                                                            
+```                                                                                                                                       
+ ─ Executing parsed code: ─────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  final_answer("To improve performance, use the following query instead:\n\nSELECT orders.id, orders.created_at, customers.name\nFROM     
+  orders\nINNER JOIN customers ON orders.customer_id = customers.id\nWHERE orders.created_at > '2023-01-01'\nORDER BY orders.created_at   
+  DESC\nLIMIT 100;\n\nAlso, add indexes as follows:\n1. CREATE INDEX idx_orders_created_at ON orders(created_at);\n2. CREATE INDEX        
+  idx_orders_customer_id_created_at ON orders(customer_id, created_at);\n\nThis should reduce the data load and improve the query         
+  performance.")                                                                                                                          
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Out - Final answer: To improve performance, use the following query instead:
+
+SELECT orders.id, orders.created_at, customers.name
+FROM orders
+INNER JOIN customers ON orders.customer_id = customers.id
+WHERE orders.created_at > '2023-01-01'
+ORDER BY orders.created_at DESC
+LIMIT 100;
+
+Also, add indexes as follows:
+1. CREATE INDEX idx_orders_created_at ON orders(created_at);
+2. CREATE INDEX idx_orders_customer_id_created_at ON orders(customer_id, created_at);
+
+This should reduce the data load and improve the query performance.
+[Step 2: Duration 2.09 seconds| Input tokens: 5,159 | Output tokens: 1,218]
+
+Output:
+To improve performance, use the following query instead:
+
+SELECT orders.id, orders.created_at, customers.name
+FROM orders
+INNER JOIN customers ON orders.customer_id = customers.id
+WHERE orders.created_at > '2023-01-01'
+ORDER BY orders.created_at DESC
+LIMIT 100;
+
+Also, add indexes as follows:
+1. CREATE INDEX idx_orders_created_at ON orders(created_at);
+2. CREATE INDEX idx_orders_customer_id_created_at ON orders(customer_id, created_at);
+
+This should reduce the data load and improve the query performance.
+
+Task 99 complete.
+------------------------------------------------------------

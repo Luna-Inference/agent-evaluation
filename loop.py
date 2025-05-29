@@ -22,7 +22,7 @@ def strip_ansi_codes(text):
 
 # Model setup (same as run.py)
 model = LiteLLMModel(
-    model_id="ollama_chat/phi4",
+    model_id="ollama_chat/phi4-reasoning:14b",
     api_base="http://localhost:11434",
     api_key="YOUR_API_KEY",
     num_ctx=8192,
@@ -74,7 +74,7 @@ except Exception as e:
 
 
 # Create log directory if it doesn't exist
-LOG_DIR = "./log"
+LOG_DIR = "./log10 - phi4-reasoning"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Generate a unique log filename for each task
