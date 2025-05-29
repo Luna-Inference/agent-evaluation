@@ -22,7 +22,7 @@ def strip_ansi_codes(text):
 
 # Model setup (same as run.py)
 model = LiteLLMModel(
-    model_id="ollama_chat/hf.co/Triangle104/Dria-Agent-a-3B-abliterated-Q4_K_M-GGUF:Q4_K_M",
+    model_id="ollama_chat/phi4",
     api_base="http://localhost:11434",
     api_key="YOUR_API_KEY",
     num_ctx=8192,
@@ -31,11 +31,32 @@ model = LiteLLMModel(
 agent = CodeAgent(tools=[], model=model, add_base_tools=True)
 agent.logger.level = 2
 
-# Load tasks from task.json file
+# Load tasks from structured task.json file
 try:
     with open('task.json', 'r') as f:
-        TASKS = json.load(f)
-    print(f"Successfully loaded {len(TASKS)} tasks from task.json")
+        TASK_DATA = json.load(f)
+    
+    # Extract tasks from structured format
+    TASKS = []
+    TASK_METADATA = []
+    
+    for category_key, category_data in TASK_DATA.items():
+        category_name = category_data.get('category', category_key)
+        
+        for example in category_data.get('examples', []):
+            task_type = example.get('task', 'unknown')
+            difficulty = example.get('difficulty', 'medium')
+            prompt = example.get('prompt', '')
+            
+            if prompt:
+                TASKS.append(prompt)
+                TASK_METADATA.append({
+                    'category': category_name,
+                    'task_type': task_type,
+                    'difficulty': difficulty
+                })
+    
+    print(f"Successfully loaded {len(TASKS)} tasks from task.json across {len(TASK_DATA)} categories")
 except Exception as e:
     print(f"Error loading tasks from task.json: {e}")
     # Fallback to a small set of tasks in case of error
@@ -43,6 +64,11 @@ except Exception as e:
         "What is the capital of France?",
         "Who wrote 'Pride and Prejudice'?",
         "What is the square root of 256?"
+    ]
+    TASK_METADATA = [
+        {'category': 'Knowledge Domains', 'task_type': 'general-knowledge', 'difficulty': 'easy'},
+        {'category': 'Knowledge Domains', 'task_type': 'general-knowledge', 'difficulty': 'medium'},
+        {'category': 'Mathematics & Quantitative Reasoning', 'task_type': 'basic-arithmetic', 'difficulty': 'easy'}
     ]
     print(f"Using {len(TASKS)} fallback tasks instead")
 
@@ -54,7 +80,8 @@ os.makedirs(LOG_DIR, exist_ok=True)
 # Generate a unique log filename for each task
 def get_log_filename(task_idx):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    return os.path.join(LOG_DIR, f"task_{task_idx+1}_{timestamp}.txt")
+    task_type = TASK_METADATA[task_idx].get('task_type', 'unknown').replace('-', '_')
+    return os.path.join(LOG_DIR, f"task_{task_idx+1}_{task_type}_{timestamp}.txt")
 
 # Create a log capture class that will capture and clean output
 class LogCapture:
@@ -93,9 +120,11 @@ try:
         sys.stderr = log_capture
         
         try:
-            # Print task info
+            # Print task info with metadata
+            metadata = TASK_METADATA[idx]
             print(f"\n{'='*80}")
             print(f"Task {idx+1}/{len(TASKS)}: {task}")
+            print(f"Category: {metadata['category']} | Type: {metadata['task_type']} | Difficulty: {metadata['difficulty']}")
             print(f"{'='*80}\n")
             
             # Run the task and capture output
