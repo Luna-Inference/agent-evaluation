@@ -15,19 +15,24 @@ import re
 import glob
 from collections import defaultdict
 import csv
-from openai import OpenAI
+from openai import AzureOpenAI
+
 import time
 
-# Load API key from secrets.json
-def load_api_key():
-    with open('secrets.json', 'r') as f:
-        secrets = json.load(f)
-        return secrets['openai']
+endpoint = "https://openai-1306.openai.azure.com/"
+deployment = "o3-mini"
+with open('secrets.json', 'r') as f:
+    secrets = json.load(f)
+    subscription_key = secrets['azure_openai']
 
 # Initialize the OpenAI client with the API key
 def get_openai_client():
-    api_key = load_api_key()
-    return OpenAI(api_key=api_key)
+    client = AzureOpenAI(
+        azure_endpoint=endpoint,
+        api_key=subscription_key,
+        api_version="2025-01-01-preview",
+    )
+    return client
 
 # Find all log directories
 def find_log_directories():
@@ -65,8 +70,8 @@ def parse_log_file(file_path):
     time_matches = re.findall(r'Duration (\d+\.\d+) seconds', content)
     total_time = sum(float(t) for t in time_matches) if time_matches else 0
     
-    # Count misunderstandings (this requires deeper analysis with GPT-4.1)
-    misunderstanding_count = 0  # Will be evaluated by GPT-4.1
+    # Count misunderstandings (this requires deeper analysis with Azure OpenAI)
+    misunderstanding_count = 0  # Will be evaluated by Azure OpenAI (o3-mini)
     
     return {
         "task": task,
@@ -80,9 +85,11 @@ def parse_log_file(file_path):
         "raw_content": content
     }
 
-# Evaluate the log with GPT-4.1
+# Evaluate the log with Azure OpenAI (o3-mini)
 def evaluate_with_gpt(log_data, client):
-    prompt = f"""
+    system_message = "You are an expert evaluator of AI agent performance. Evaluate the provided log objectively and concisely."
+    
+    user_prompt = f"""
     Evaluate the following agent interaction log based on these criteria:
     
     1. Correctness: Is the answer truthfully correct? (yes/no/partial)
@@ -92,7 +99,11 @@ def evaluate_with_gpt(log_data, client):
     5. Token usage: {log_data['input_tokens']} input tokens and {log_data['output_tokens']} output tokens were used.
     6. Time: {log_data['total_time']:.2f} seconds total end-to-end time taken.
     7. Category: What category does this prompt fall into? (general knowledge, coding, math, etc.)
-    8. Self-confidence: How confident should the model be in its own internal knowledge for this question? If this is general information, the model should rely on its own knowledge.
+    8. Self-confidence: Rate as "high/medium/low" based on the following definition:
+       - High: This question is about common knowledge that the model should know without tools (e.g., capitals, basic facts).
+         If the model still used tools for this, it shows low self-confidence in its knowledge.
+       - Medium: This question might require some external verification but contains elements the model should know.
+       - Low: This question legitimately requires external tools or information the model couldn't reasonably know.
     
     Task: {log_data['task']}
     Final answer: {log_data['answer']}
@@ -108,20 +119,43 @@ def evaluate_with_gpt(log_data, client):
       "explanation": "brief explanation of your evaluation"}}
     """
     
+    # Prepare messages in the format expected by Azure OpenAI
+    messages = [
+        {
+            "role": "developer",
+            "content": [
+                {
+                    "type": "text",
+                    "text": system_message
+                }
+            ]
+        },
+        {
+            "role": "developer",
+            "content": [
+                {
+                    "type": "text",
+                    "text": user_prompt
+                }
+            ]
+        }
+    ]
+    
     try:
+        # Call Azure OpenAI API with the appropriate parameters
         response = client.chat.completions.create(
-            model="gpt-4.1",
-            messages=[
-                {"role": "system", "content": "You are an expert evaluator of AI agent performance. Evaluate the provided log objectively and concisely."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_object"}
+            model=deployment,  # Use the deployment name defined at the top
+            messages=messages,
+            response_format={"type": "json_object"},
+            max_completion_tokens=1000,  # Adjust as needed
+            stream=False
         )
         
+        # Parse the response
         evaluation = json.loads(response.choices[0].message.content)
         return evaluation
     except Exception as e:
-        print(f"Error evaluating log with GPT-4.1: {e}")
+        print(f"Error evaluating log with Azure OpenAI: {e}")
         return {
             "correctness": "error",
             "misunderstanding_count": 0,
@@ -130,9 +164,9 @@ def evaluate_with_gpt(log_data, client):
             "explanation": f"Error during evaluation: {str(e)}"
         }
 
-# Generate evaluation summaries
-def generate_evaluation_summaries(results, eval_dir):
-    print("\nGenerating evaluation summaries...")
+# Generate per-model evaluation files
+def generate_model_evaluation_files(results, eval_dir):
+    print("\nGenerating per-model evaluation files...")
     
     if not results:
         print("No results to summarize")
@@ -146,16 +180,18 @@ def generate_evaluation_summaries(results, eval_dir):
             model_evaluations[model] = []
         model_evaluations[model].append(result)
     
-    # Create combined evaluations file
-    full_eval_file = os.path.join(eval_dir, "all_evaluations.txt")
-    with open(full_eval_file, 'w', encoding='utf-8') as f:
-        f.write("ALL MODEL EVALUATIONS\n")
-        f.write("=" * 80 + "\n\n")
+    # Process each model separately
+    for model, evals in model_evaluations.items():
+        # Create model-specific directory if it doesn't exist
+        model_dir = os.path.join(eval_dir, model)
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
         
-        # Write evaluations for each model
-        for model, evals in model_evaluations.items():
-            f.write(f"MODEL: {model}\n")
-            f.write("-" * 80 + "\n\n")
+        # Generate detailed evaluation file for this model
+        detailed_file = os.path.join(model_dir, "detailed_evaluation.txt")
+        with open(detailed_file, 'w', encoding='utf-8') as f:
+            f.write(f"DETAILED EVALUATIONS FOR {model}\n")
+            f.write("=" * 80 + "\n\n")
             
             for i, eval_data in enumerate(evals):
                 f.write(f"Evaluation {i+1}/{len(evals)}: {eval_data['task']}\n")
@@ -171,26 +207,13 @@ def generate_evaluation_summaries(results, eval_dir):
                 f.write(f"Total tokens: {eval_data['total_tokens']} (Input: {eval_data['input_tokens']}, Output: {eval_data['output_tokens']})\n")
                 f.write(f"Total time: {eval_data['total_time']:.2f} seconds\n\n")
                 f.write(f"Explanation: {eval_data['explanation']}\n\n")
-            
-            f.write("=" * 80 + "\n\n")
-    
-    print(f"All evaluations written to {full_eval_file}")
-    
-    # Create combined summary file
-    summary_file = os.path.join(eval_dir, "model_comparison.txt")
-    with open(summary_file, 'w', encoding='utf-8') as f:
-        f.write("MODEL COMPARISON SUMMARY\n")
-        f.write("=" * 80 + "\n\n")
+                f.write("-" * 80 + "\n\n")
         
-        # Table of model performance stats
-        f.write("Model Performance Metrics:\n")
-        f.write("-" * 80 + "\n")
-        f.write(f"{'Model':<25} {'Tasks':<6} {'Correct %':<10} {'Steps':<8} {'Failures':<10} {'Misund.':<8} {'Tokens':<10} {'Time (s)':<10}\n")
-        f.write("-" * 80 + "\n")
+        print(f"Detailed evaluation for {model} written to {detailed_file}")
         
-        # Calculate and display stats for each model
-        model_stats = []
-        for model, evals in model_evaluations.items():
+        # Generate summary file for this model
+        summary_file = os.path.join(model_dir, "summary.txt")
+        with open(summary_file, 'w', encoding='utf-8') as f:
             count = len(evals)
             correct = sum(1 for e in evals if e["correctness"] == "yes")
             partial = sum(1 for e in evals if e["correctness"] == "partial")
@@ -203,73 +226,42 @@ def generate_evaluation_summaries(results, eval_dir):
             avg_tokens = sum(e["total_tokens"] for e in evals) / count if count > 0 else 0
             avg_time = sum(e["total_time"] for e in evals) / count if count > 0 else 0
             
-            f.write(f"{model:<25} {count:<6} {correct_pct:.1f}%      {avg_steps:.1f}    {avg_failures:.1f}        {avg_misunderstandings:.1f}      {avg_tokens:.1f}     {avg_time:.1f}\n")
-            
-            # Store stats for detailed analysis
-            stats = {
-                "model": model,
-                "count": count,
-                "correct": correct,
-                "partial": partial,
-                "incorrect": incorrect,
-                "correct_pct": correct_pct,
-                "avg_steps": avg_steps,
-                "avg_failures": avg_failures,
-                "avg_misunderstandings": avg_misunderstandings,
-                "avg_tokens": avg_tokens,
-                "avg_time": avg_time,
-                "categories": {}
-            }
-            
-            # Count categories for this model
+            # Count categories
+            categories = {}
             for eval_data in evals:
                 category = eval_data["category"]
-                if category in stats["categories"]:
-                    stats["categories"][category] += 1
+                if category in categories:
+                    categories[category] += 1
                 else:
-                    stats["categories"][category] = 1
+                    categories[category] = 1
             
-            model_stats.append(stats)
-        
-        # Sort models by correctness percentage (descending)
-        model_stats.sort(key=lambda x: x["correct_pct"], reverse=True)
-        
-        # Detailed analysis for each model
-        f.write("\n\nDETAILED MODEL ANALYSIS\n")
-        f.write("=" * 80 + "\n\n")
-        
-        for stats in model_stats:
-            model = stats["model"]
-            count = stats["count"]
-            evals = model_evaluations[model]
-            
-            f.write(f"MODEL: {model}\n")
-            f.write("-" * 60 + "\n\n")
+            f.write(f"SUMMARY FOR {model}\n")
+            f.write("=" * 80 + "\n\n")
             
             f.write(f"Total evaluations: {count}\n\n")
             f.write(f"Performance:\n")
-            f.write(f"  Correct: {stats['correct']} ({stats['correct']/count*100:.1f}%)\n" if count > 0 else "  Correct: 0 (0.0%)\n")
-            f.write(f"  Partially correct: {stats['partial']} ({stats['partial']/count*100:.1f}%)\n" if count > 0 else "  Partially correct: 0 (0.0%)\n")
-            f.write(f"  Incorrect: {stats['incorrect']} ({stats['incorrect']/count*100:.1f}%)\n" if count > 0 else "  Incorrect: 0 (0.0%)\n")
-            f.write(f"  Overall correctness score: {stats['correct_pct']:.1f}%\n\n")
+            f.write(f"  Correct: {correct} ({correct/count*100:.1f}%)\n" if count > 0 else "  Correct: 0 (0.0%)\n")
+            f.write(f"  Partially correct: {partial} ({partial/count*100:.1f}%)\n" if count > 0 else "  Partially correct: 0 (0.0%)\n")
+            f.write(f"  Incorrect: {incorrect} ({incorrect/count*100:.1f}%)\n" if count > 0 else "  Incorrect: 0 (0.0%)\n")
+            f.write(f"  Overall correctness score: {correct_pct:.1f}%\n\n")
             
             f.write(f"Efficiency:\n")
-            f.write(f"  Average steps: {stats['avg_steps']:.1f}\n")
-            f.write(f"  Average failures: {stats['avg_failures']:.1f}\n")
-            f.write(f"  Average misunderstandings: {stats['avg_misunderstandings']:.1f}\n")
-            f.write(f"  Average tokens: {stats['avg_tokens']:.1f}\n")
-            f.write(f"  Average time: {stats['avg_time']:.1f} seconds\n\n")
+            f.write(f"  Average steps: {avg_steps:.1f}\n")
+            f.write(f"  Average failures: {avg_failures:.1f}\n")
+            f.write(f"  Average misunderstandings: {avg_misunderstandings:.1f}\n")
+            f.write(f"  Average tokens: {avg_tokens:.1f}\n")
+            f.write(f"  Average time: {avg_time:.1f} seconds\n\n")
             
             f.write(f"Categories:\n")
-            for category, count in sorted(stats["categories"].items(), key=lambda x: x[1], reverse=True):
-                f.write(f"  {category}: {count} ({count/stats['count']*100:.1f}%)\n" if stats['count'] > 0 else f"  {category}: 0 (0.0%)\n")
+            for category, count in sorted(categories.items(), key=lambda x: x[1], reverse=True):
+                f.write(f"  {category}: {count} ({count/len(evals)*100:.1f}%)\n" if len(evals) > 0 else f"  {category}: 0 (0.0%)\n")
             
             # Find interesting patterns and observations
             f.write("\nInteresting Observations:\n")
             
             # Check if model has strengths in certain categories
-            if stats["categories"]:
-                strongest_category = max(stats["categories"].items(), key=lambda x: x[1])[0]
+            if categories:
+                strongest_category = max(categories.items(), key=lambda x: x[1])[0]
                 f.write(f"1. This model was tested most frequently on '{strongest_category}' tasks.\n")
             
             # Check if the model is particularly good or bad at certain tasks
@@ -317,23 +309,74 @@ def generate_evaluation_summaries(results, eval_dir):
                     f.write(f"using {avg_correct_steps:.1f} steps for correct answers vs. ")
                     f.write(f"{avg_incorrect_steps:.1f} steps for incorrect answers.\n")
             
-            # Check if the model tends to be overconfident
-            if count > 3:  # Only if we have enough samples
-                high_confidence = [e for e in evals if e["self_confidence"] == "high"]
-                if high_confidence:
-                    high_conf_correct = sum(1 for e in high_confidence if e["correctness"] == "yes")
-                    high_conf_incorrect = sum(1 for e in high_confidence if e["correctness"] == "no")
+            # Check for self-confidence patterns
+            if len(evals) > 3:  # Only if we have enough samples
+                # Self-confidence analysis (looking at questions that should have been answered without tools)
+                high_knowledge_questions = [e for e in evals if e["self_confidence"] == "high"]
+                if high_knowledge_questions:
+                    tools_used = sum(1 for e in high_knowledge_questions if e["step_count"] > 1)  # More than 1 step means tools were used
                     
-                    if high_conf_incorrect > high_conf_correct:  # More incorrect than correct with high confidence
-                        f.write(f"5. The model shows signs of overconfidence. When highly confident, ")
-                        f.write(f"it's incorrect more often than it's correct.\n")
-                    elif high_conf_correct > high_conf_incorrect * 3:  # Much more correct than incorrect with high confidence
-                        f.write(f"5. The model's confidence is well-calibrated. When highly confident, ")
-                        f.write(f"it's usually correct.\n")
-            
-            f.write("\n" + "=" * 80 + "\n\n")
+                    # Calculate percentage of high-knowledge questions where tools were unnecessarily used
+                    tools_percentage = (tools_used / len(high_knowledge_questions)) * 100 if high_knowledge_questions else 0
+                    
+                    if tools_percentage > 70:
+                        f.write(f"5. Low self-confidence: The model frequently used tools ({tools_percentage:.1f}% of the time) ")
+                        f.write(f"for questions it should have known the answers to without external verification.\n")
+                    elif tools_percentage < 30:
+                        f.write(f"5. High self-confidence: The model appropriately answered {100-tools_percentage:.1f}% of common knowledge ")
+                        f.write(f"questions directly without unnecessary tool use.\n")
+                    else:
+                        f.write(f"5. Medium self-confidence: The model used tools for {tools_percentage:.1f}% of questions ")
+                        f.write(f"that could have been answered directly from its knowledge.\n")
+        
+        print(f"Summary for {model} written to {summary_file}")
     
-    print(f"Model comparison summary written to {summary_file}")
+    # Also create overall comparison file
+    comparison_file = os.path.join(eval_dir, "model_comparison.txt")
+    with open(comparison_file, 'w', encoding='utf-8') as f:
+        f.write("MODEL COMPARISON SUMMARY\n")
+        f.write("=" * 80 + "\n\n")
+        
+        # Table of model performance stats
+        f.write("Model Performance Metrics:\n")
+        f.write("-" * 80 + "\n")
+        f.write(f"{'Model':<25} {'Tasks':<6} {'Correct %':<10} {'Steps':<8} {'Failures':<10} {'Misund.':<8} {'Tokens':<10} {'Time (s)':<10}\n")
+        f.write("-" * 80 + "\n")
+        
+        # Calculate and display stats for each model
+        model_stats = []
+        for model, evals in model_evaluations.items():
+            count = len(evals)
+            correct = sum(1 for e in evals if e["correctness"] == "yes")
+            partial = sum(1 for e in evals if e["correctness"] == "partial")
+            incorrect = sum(1 for e in evals if e["correctness"] == "no")
+            
+            correct_pct = (correct + 0.5 * partial) / count * 100 if count > 0 else 0
+            avg_steps = sum(e["step_count"] for e in evals) / count if count > 0 else 0
+            avg_failures = sum(e["failure_count"] for e in evals) / count if count > 0 else 0
+            avg_misunderstandings = sum(e["misunderstanding_count"] for e in evals) / count if count > 0 else 0
+            avg_tokens = sum(e["total_tokens"] for e in evals) / count if count > 0 else 0
+            avg_time = sum(e["total_time"] for e in evals) / count if count > 0 else 0
+            
+            model_stats.append({
+                "model": model,
+                "count": count,
+                "correct_pct": correct_pct,
+                "avg_steps": avg_steps,
+                "avg_failures": avg_failures,
+                "avg_misunderstandings": avg_misunderstandings,
+                "avg_tokens": avg_tokens,
+                "avg_time": avg_time
+            })
+        
+        # Sort models by correctness percentage (descending)
+        model_stats.sort(key=lambda x: x["correct_pct"], reverse=True)
+        
+        # Write the comparison table
+        for stats in model_stats:
+            f.write(f"{stats['model']:<25} {stats['count']:<6} {stats['correct_pct']:.1f}%      {stats['avg_steps']:.1f}    {stats['avg_failures']:.1f}        {stats['avg_misunderstandings']:.1f}      {stats['avg_tokens']:.1f}     {stats['avg_time']:.1f}\n")
+    
+    print(f"Model comparison written to {comparison_file}")
 
 # Main function to evaluate all logs
 def evaluate_all_logs():
@@ -393,8 +436,8 @@ def evaluate_all_logs():
                 # Parse the log file
                 log_data = parse_log_file(log_file)
                 
-                # Evaluate with GPT-4.1
-                print("  Evaluating with GPT-4.1...")
+                # Evaluate with Azure OpenAI
+                print("  Evaluating with Azure OpenAI (o3-mini)...")
                 evaluation = evaluate_with_gpt(log_data, client)
                 
                 # Combine log data with evaluation
@@ -442,8 +485,8 @@ def evaluate_all_logs():
     
     print(f"\nEvaluation complete. Results written to {output_file}")
     
-    # Generate combined evaluation summaries
-    generate_evaluation_summaries(results, eval_dir)
+    # Generate per-model evaluation files
+    generate_model_evaluation_files(results, eval_dir)
 
 # Run the evaluation if this script is executed directly
 if __name__ == "__main__":

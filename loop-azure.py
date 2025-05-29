@@ -6,6 +6,7 @@ import re
 import json
 from io import StringIO
 from smolagents import CodeAgent, LiteLLMModel
+from openai import AzureOpenAI
 
 # Disable colored output for most libraries
 os.environ["NO_COLOR"] = "1"
@@ -20,12 +21,21 @@ def strip_ansi_codes(text):
 # Define log directory - but don't redirect output programmatically
 # Instead, use shell redirection: python loop.py >> /home/thomas/agents/log/output.txt
 
-# Model setup (same as run.py)
+# Azure OpenAI Configuration (same as evaluation.py)
+endpoint = "https://openai-1306.openai.azure.com/"
+deployment = "o3-mini"
+
+# Model setup with Azure OpenAI
+with open("secrets.json", "r") as f:
+    secrets = json.load(f)
+    subscription_key = secrets['azure_openai']
+
+# Initialize the Azure OpenAI client
 model = LiteLLMModel(
-    model_id="ollama_chat/phi4",
-    api_base="http://localhost:11434",
-    api_key="YOUR_API_KEY",
-    num_ctx=8192,
+    model_id=f"azure/{deployment}",
+    api_key=subscription_key,
+    api_base=endpoint,
+    api_version="2025-01-01-preview"
 )
 
 agent = CodeAgent(tools=[], model=model, add_base_tools=True)

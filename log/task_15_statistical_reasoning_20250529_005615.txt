@@ -1,0 +1,66 @@
+
+================================================================================
+Task 15/183: Given a normal distribution with μ = 100 and σ = 15, what percentage of values fall between 85 and 130?
+Category: Mathematics & Quantitative Reasoning | Type: statistical-reasoning | Difficulty: difficult
+================================================================================
+
+╭─────────────────────────────────────────────────────────────── New run ────────────────────────────────────────────────────────────────╮
+│                                                                                                                                        │
+│ Given a normal distribution with μ = 100 and σ = 15, what percentage of values fall between 85 and 130?                                │
+│                                                                                                                                        │
+╰─ LiteLLMModel - azure/o3-mini ─────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 1 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought: To solve the problem, I'll use the cumulative distribution function (CDF) of the standard normal distribution. For a value x, the
+corresponding z-score is given by z = (x - μ) / σ. For x = 85, z = (85 - 100) / 15 = -1, and for x = 130, z = (130 - 100) / 15 = 2. The   
+probability of a value falling between these z-scores is P(-1 ≤ z ≤ 2) = CDF(2) - CDF(-1). Using Python's math.erf function, I can compute
+this probability and then multiply by 100 to get the percentage.                                                                          
+                                                                                                                                          
+Code:                                                                                                                                     
+```py                                                                                                                                     
+import math                                                                                                                               
+                                                                                                                                          
+# Function to compute CDF for the standard normal distribution using the error function                                                   
+def cdf_normal(z):                                                                                                                        
+    return 0.5 * (1 + math.erf(z / math.sqrt(2)))                                                                                         
+                                                                                                                                          
+# Compute the z-scores for 85 and 130                                                                                                     
+z1 = (85 - 100) / 15  # -1                                                                                                                
+z2 = (130 - 100) / 15  # 2                                                                                                                
+                                                                                                                                          
+# Compute the probability between these two z-scores                                                                                      
+probability = cdf_normal(z2) - cdf_normal(z1)                                                                                             
+percentage = probability * 100                                                                                                            
+                                                                                                                                          
+print("Percentage of values between 85 and 130:", percentage)                                                                             
+final_answer(percentage)                                                                                                                  
+```                                                                                                                                       
+ ─ Executing parsed code: ─────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  import math                                                                                                                             
+                                                                                                                                          
+  # Function to compute CDF for the standard normal distribution using the error function                                                 
+  def cdf_normal(z):                                                                                                                      
+      return 0.5 * (1 + math.erf(z / math.sqrt(2)))                                                                                       
+                                                                                                                                          
+  # Compute the z-scores for 85 and 130                                                                                                   
+  z1 = (85 - 100) / 15  # -1                                                                                                              
+  z2 = (130 - 100) / 15  # 2                                                                                                              
+                                                                                                                                          
+  # Compute the probability between these two z-scores                                                                                    
+  probability = cdf_normal(z2) - cdf_normal(z1)                                                                                           
+  percentage = probability * 100                                                                                                          
+                                                                                                                                          
+  print("Percentage of values between 85 and 130:", percentage)                                                                           
+  final_answer(percentage)                                                                                                                
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Execution logs:
+Percentage of values between 85 and 130: 81.85946141203637
+
+Out - Final answer: 81.85946141203637
+[Step 1: Duration 17.10 seconds| Input tokens: 2,075 | Output tokens: 561]
+
+Output:
+81.85946141203637
+
+Task 15 complete.
+------------------------------------------------------------
