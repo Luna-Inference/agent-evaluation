@@ -22,7 +22,7 @@ def strip_ansi_codes(text):
 
 # Model setup (same as run.py)
 model = LiteLLMModel(
-    model_id="ollama_chat/phi4-mini-reasoning",
+    model_id="ollama_chat/mistral",
     api_base="http://localhost:11434",
     api_key="YOUR_API_KEY",
     num_ctx=30000,
@@ -33,7 +33,7 @@ agent.logger.level = 2
 
 # Load tasks from structured task.json file
 try:
-    with open('task.json', 'r') as f:
+    with open('task-subset.json', 'r') as f:
         TASK_DATA = json.load(f)
     
     # Extract tasks from structured format
@@ -74,7 +74,7 @@ except Exception as e:
 
 
 # Create log directory if it doesn't exist
-LOG_DIR = "./log11 - phi4-mini-reasoning"
+LOG_DIR = "./log19 - mistral"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Generate a unique log filename for each task
