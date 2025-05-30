@@ -6,7 +6,9 @@ import re
 import json
 from io import StringIO
 from smolagents import CodeAgent, LiteLLMModel
-
+from openai import AzureOpenAI
+import litellm
+litellm.drop_params=True
 # Disable colored output for most libraries
 os.environ["NO_COLOR"] = "1"
 os.environ["CLICOLOR"] = "0"
@@ -20,12 +22,23 @@ def strip_ansi_codes(text):
 # Define log directory - but don't redirect output programmatically
 # Instead, use shell redirection: python loop.py >> /home/thomas/agents/log/output.txt
 
-# Model setup (same as run.py)
+# Azure OpenAI Configuration (same as evaluation.py)
+# endpoint = "https://openai-1306.openai.azure.com/"
+# deployment = "gpt-4.1"
+
+# Model setup with Azure OpenAI
+with open("secrets.json", "r") as f:
+    secrets = json.load(f)
+    subscription_key = secrets['azure_openai']
+
+os.environ['PERPLEXITYAI_API_KEY'] = secrets['perplexity_api_key']
+
+# Initialize the Azure OpenAI client
 model = LiteLLMModel(
-    model_id="ollama_chat/phi4-mini-reasoning",
-    api_base="http://localhost:11434",
-    api_key="YOUR_API_KEY",
-    num_ctx=30000,
+    model_id="perplexity/sonar-pro",
+    # api_key=subscription_key,
+    # api_base=endpoint,
+    # api_version="2025-01-01-preview"
 )
 
 agent = CodeAgent(tools=[], model=model, add_base_tools=True)
@@ -68,13 +81,13 @@ except Exception as e:
     TASK_METADATA = [
         {'category': 'Knowledge Domains', 'task_type': 'general-knowledge', 'difficulty': 'easy'},
         {'category': 'Knowledge Domains', 'task_type': 'general-knowledge', 'difficulty': 'medium'},
-        {'category': 'Mathematics & Quantitative Reasoning', 'task_type': 'basic-arithmetic', 'difficulty': 'easy'}
+        {'category': 'Mathematics & Quantitative Reasoning', 'task_type': 'basic`-a`rithmetic', 'difficulty': 'easy'}
     ]
     print(f"Using {len(TASKS)} fallback tasks instead")
 
 
 # Create log directory if it doesn't exist
-LOG_DIR = "./log11 - phi4-mini-reasoning"
+LOG_DIR = "./log13 - sonar-pro"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Generate a unique log filename for each task

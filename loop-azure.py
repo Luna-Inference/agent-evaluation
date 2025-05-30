@@ -23,7 +23,7 @@ def strip_ansi_codes(text):
 
 # Azure OpenAI Configuration (same as evaluation.py)
 endpoint = "https://openai-1306.openai.azure.com/"
-deployment = "o3-mini"
+deployment = "gpt-4.1"
 
 # Model setup with Azure OpenAI
 with open("secrets.json", "r") as f:
@@ -84,7 +84,7 @@ except Exception as e:
 
 
 # Create log directory if it doesn't exist
-LOG_DIR = "./log"
+LOG_DIR = "./log15 - gpt-4.1"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Generate a unique log filename for each task

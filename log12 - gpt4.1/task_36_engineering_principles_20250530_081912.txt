@@ -1,0 +1,136 @@
+
+================================================================================
+Task 36/183: Analyze the stability of a feedback control system with transfer function G(s) = K/(s²+3s+2).
+Category: Science & Technical Knowledge | Type: engineering-principles | Difficulty: difficult
+================================================================================
+
+╭─────────────────────────────────────────────────────────────────────────────────── New run ───────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                                                                               │
+│ Analyze the stability of a feedback control system with transfer function G(s) = K/(s²+3s+2).                                                                                 │
+│                                                                                                                                                                               │
+╰─ LiteLLMModel - azure/gpt-4.1 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 1 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought:                                                                                                                                                                         
+To analyze the stability of the feedback control system with transfer function \( G(s) = \frac{K}{s^2 + 3s + 2} \), I need to consider the closed-loop system.                   
+Assuming unity feedback, the closed-loop transfer function is:                                                                                                                   
+\( T(s) = \frac{G(s)}{1 + G(s)} \).                                                                                                                                              
+System is stable if all poles have negative real parts (i.e., are in the left-half s-plane).                                                                                     
+                                                                                                                                                                                 
+Let's first write the characteristic equation, and then analyze the roots for stability as a function of K.                                                                      
+                                                                                                                                                                                 
+Code:                                                                                                                                                                            
+```py                                                                                                                                                                            
+# The open-loop transfer function G(s) = K / (s^2 + 3s + 2)                                                                                                                      
+# Closed loop transfer function: T(s) = G(s) / (1 + G(s))                                                                                                                        
+# Characteristic equation: 1 + G(s) = 0                                                                                                                                          
+                                                                                                                                                                                 
+# Characteristic equation:                                                                                                                                                       
+# 1 + K / (s^2 + 3s + 2) = 0                                                                                                                                                     
+# => s^2 + 3s + 2 + K = 0                                                                                                                                                        
+                                                                                                                                                                                 
+# Let's find the roots in terms of K:                                                                                                                                            
+import math                                                                                                                                                                      
+                                                                                                                                                                                 
+def closed_loop_poles(K):                                                                                                                                                        
+    # Equation: s^2 + 3s + (2 + K) = 0                                                                                                                                           
+    a = 1                                                                                                                                                                        
+    b = 3                                                                                                                                                                        
+    c = 2 + K                                                                                                                                                                    
+    discriminant = b**2 - 4*a*c                                                                                                                                                  
+    if discriminant >= 0:                                                                                                                                                        
+        root1 = (-b + math.sqrt(discriminant)) / (2*a)                                                                                                                           
+        root2 = (-b - math.sqrt(discriminant)) / (2*a)                                                                                                                           
+    else:                                                                                                                                                                        
+        # Complex conjugate roots                                                                                                                                                
+        real = -b / (2*a)                                                                                                                                                        
+        imag = math.sqrt(-discriminant) / (2*a)                                                                                                                                  
+        root1 = complex(real, imag)                                                                                                                                              
+        root2 = complex(real, -imag)                                                                                                                                             
+    return root1, root2                                                                                                                                                          
+                                                                                                                                                                                 
+# Let's check for which values of K both poles have negative real parts.                                                                                                         
+print("Closed-loop poles for a few values of K:")                                                                                                                                
+for K in [-3, 0, 1, 5, 10]:                                                                                                                                                      
+    print(f"K={K}: poles={closed_loop_poles(K)}")                                                                                                                                
+```                                                                                                                                                                              
+ ─ Executing parsed code: ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  # The open-loop transfer function G(s) = K / (s^2 + 3s + 2)                                                                                                                    
+  # Closed loop transfer function: T(s) = G(s) / (1 + G(s))                                                                                                                      
+  # Characteristic equation: 1 + G(s) = 0                                                                                                                                        
+                                                                                                                                                                                 
+  # Characteristic equation:                                                                                                                                                     
+  # 1 + K / (s^2 + 3s + 2) = 0                                                                                                                                                   
+  # => s^2 + 3s + 2 + K = 0                                                                                                                                                      
+                                                                                                                                                                                 
+  # Let's find the roots in terms of K:                                                                                                                                          
+  import math                                                                                                                                                                    
+                                                                                                                                                                                 
+  def closed_loop_poles(K):                                                                                                                                                      
+      # Equation: s^2 + 3s + (2 + K) = 0                                                                                                                                         
+      a = 1                                                                                                                                                                      
+      b = 3                                                                                                                                                                      
+      c = 2 + K                                                                                                                                                                  
+      discriminant = b**2 - 4*a*c                                                                                                                                                
+      if discriminant >= 0:                                                                                                                                                      
+          root1 = (-b + math.sqrt(discriminant)) / (2*a)                                                                                                                         
+          root2 = (-b - math.sqrt(discriminant)) / (2*a)                                                                                                                         
+      else:                                                                                                                                                                      
+          # Complex conjugate roots                                                                                                                                              
+          real = -b / (2*a)                                                                                                                                                      
+          imag = math.sqrt(-discriminant) / (2*a)                                                                                                                                
+          root1 = complex(real, imag)                                                                                                                                            
+          root2 = complex(real, -imag)                                                                                                                                           
+      return root1, root2                                                                                                                                                        
+                                                                                                                                                                                 
+  # Let's check for which values of K both poles have negative real parts.                                                                                                       
+  print("Closed-loop poles for a few values of K:")                                                                                                                              
+  for K in [-3, 0, 1, 5, 10]:                                                                                                                                                    
+      print(f"K={K}: poles={closed_loop_poles(K)}")                                                                                                                              
+ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Execution logs:
+Closed-loop poles for a few values of K:
+K=-3: poles=(0.30277563773199456, -3.302775637731995)
+K=0: poles=(-1.0, -2.0)
+K=1: poles=((-1.5+0.8660254037844386j), (-1.5-0.8660254037844386j))
+K=5: poles=((-1.5+2.179449471770337j), (-1.5-2.179449471770337j))
+K=10: poles=((-1.5+3.122498999199199j), (-1.5-3.122498999199199j))
+
+Out: None
+[Step 1: Duration 3.34 seconds| Input tokens: 2,074 | Output tokens: 474]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought:                                                                                                                                                                         
+From the pole values for different K, I can analyze stability as follows:                                                                                                        
+- Poles must have negative real parts for stability.                                                                                                                             
+- For K = -3, one pole is positive (0.30), so the system is unstable.                                                                                                            
+- For K = 0 or any positive K, both poles have negative real parts (either real or complex conjugate with negative real part).                                                   
+                                                                                                                                                                                 
+Now, let's determine analytically for which values of K both poles are in the left half-plane.                                                                                   
+                                                                                                                                                                                 
+The quadratic equation is \( s^2 + 3s + (2+K) = 0 \).                                                                                                                            
+The roots have negative real parts if:                                                                                                                                           
+1. The sum of coefficients of s (3) is positive: always true.                                                                                                                    
+2. The constant term (2+K) is positive: so \( K > -2 \).                                                                                                                         
+                                                                                                                                                                                 
+But for both roots to also be negative, let's check if the quadratic formula ever produces positive real parts apart from this condition.                                        
+                                                                                                                                                                                 
+When \( 2+K > 0 \), the constant term is positive. The sum of roots is -3 < 0. By the Routh–Hurwitz criterion, as long as all coefficients are positive, the system is stable.   
+                                                                                                                                                                                 
+Thus, the system is stable for \( K > -2 \).                                                                                                                                     
+                                                                                                                                                                                 
+Code:                                                                                                                                                                            
+```py                                                                                                                                                                            
+final_answer("The feedback system is stable if and only if K > -2. For these values, all closed-loop poles have negative real parts.")                                           
+```                                                                                                                                                                              
+ ─ Executing parsed code: ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  final_answer("The feedback system is stable if and only if K > -2. For these values, all closed-loop poles have negative real parts.")                                         
+ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Out - Final answer: The feedback system is stable if and only if K > -2. For these values, all closed-loop poles have negative real parts.
+[Step 2: Duration 2.63 seconds| Input tokens: 5,207 | Output tokens: 768]
+
+Output:
+The feedback system is stable if and only if K > -2. For these values, all closed-loop poles have negative real parts.
+
+Task 36 complete.
+------------------------------------------------------------
