@@ -1,0 +1,409 @@
+
+================================================================================
+Task 97/183: Identify and fix the race condition in this multi-threaded banking application that occasionally produces incorrect account balances.
+Category: Creative & Generation Tasks | Type: code-debugging | Difficulty: difficult
+================================================================================
+
+╭─────────────────────────────────────────────────────────────────────────────────── New run ───────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                                                                               │
+│ Identify and fix the race condition in this multi-threaded banking application that occasionally produces incorrect account balances.                                         │
+│                                                                                                                                                                               │
+╰─ LiteLLMModel - azure/gpt-4.1 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 1 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought:                                                                                                                                                                         
+To find and fix the race condition, I need to review a representative code snippet of the multi-threaded banking application. Usually, race conditions in such scenarios arise   
+when multiple threads perform deposits/withdrawals concurrently on shared account balances without proper synchronization. I will start by searching for a common race condition 
+sample in multi-threaded banking code, then explain and fix it with proper synchronization (e.g., using locks).                                                                  
+                                                                                                                                                                                 
+Code:                                                                                                                                                                            
+```py                                                                                                                                                                            
+# I'll search the web for a common race condition example in a multi-threaded banking application.                                                                               
+result = web_search("race condition example in multi-threaded banking application code")                                                                                         
+print(result)                                                                                                                                                                    
+```                                                                                                                                                                              
+ ─ Executing parsed code: ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  # I'll search the web for a common race condition example in a multi-threaded banking application.                                                                             
+  result = web_search("race condition example in multi-threaded banking application code")                                                                                       
+  print(result)                                                                                                                                                                  
+ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Execution logs:
+## Search Results
+
+[multithreading - What is a race condition? - Stack Overflow](https://stackoverflow.com/questions/34510/what-is-a-race-condition)
+Religious code review, multi-threaded unit tests. There is no shortcut. There are few Eclipse plugin emerging on this, but nothing stable yet. ... Race conditions occur in 
+multi-threaded applications or multi-process systems. A race condition, at its most basic, is anything that makes the assumption that two things not in the same thread or ...
+
+[Race Condition Demo in C# - GitHub](https://github.com/yasser-mohamed1/Race-Condition)
+The program simulates multiple threads accessing and modifying the account balance: Deposit and Withdraw: Methods without synchronization that cause a race condition. 
+DepositWithLock and WithdrawWithLock: Methods using lock to avoid race conditions. You can run the code to observe the final balance, both with and without locks.
+
+[Demystifying Race Conditions: A Deep Dive into Thread Safety ... - 
+Medium](https://medium.com/@satyendra.jaiswal/demystifying-race-conditions-a-deep-dive-into-thread-safety-and-concurrency-4ad070690430)
+To illustrate this concept, let's delve into a practical example involving a simple banking application. Consider a scenario where multiple threads are concurrently updating a 
+bank account balance.
+
+[Have you noticed Race Condition in Java Multi-threading Concurrency 
+...](https://crunchify.com/have-you-noticed-race-condition-in-java-multithreading-concurrency-example-how-to-deal-with-it/)
+This is very simple banking example in which you will deposit and withdraw ... Now question is how to avoid Race Condition in your Java Application? ... A singleton class where 
+we just check the object for null before creating a new one is also an example of race condition. In a multi threaded env. that may result in 2 instances of a Singleton ...
+
+[What Is a Race Condition? | Baeldung on Computer Science](https://www.baeldung.com/cs/race-conditions)
+By definition, a race condition is a condition of a program where its behavior depends on relative timing or interleaving of multiple threads or processes. One or more possible 
+outcomes may be undesirable, resulting in a bug. We refer to this kind of behavior as nondeterministic. Thread-safe is the term we use to describe a program, code, or data 
+structure free of race conditions when accessed ...
+
+[Race Conditions in Java | Useful Codes](https://useful.codes/race-conditions-in-java/)
+For example, consider a simple banking application where two threads attempt to withdraw money from the same account. ... which can lead to inconsistent application states. 
+Example of a Race Condition. Let's illustrate a race condition with a simple Java example: public class BankAccount { private int balance = 100; public void withdraw(int ...
+
+[Race Condition in Java Multi-Threading | Tech Tutorials](https://www.netjstech.com/2015/06/race-condition-in-java-multi-threading.html)
+Race condition in Java occurs in a multi-threaded environment when more than one thread try to access a shared resource (modify, write) at the same time. Since multiple threads 
+try to race each other to finish executing a method thus the name race condition. Two points to note about race condition are-
+
+[GitHub - Agent215/Multithreaded_BankSim: A bank simulation written in ...](https://github.com/Agent215/Multithreaded_BankSim)
+There were multiple requirements for this project. The primary goal was to reverse engineer a simple Banking simulation that utilized a multi threaded approach. This software 
+while appearing to work correctly actually contained several race conditions. We were to identify these race conditions and document them with a UML sequence diagram.
+
+[Understanding Race Conditions in Software Development —](https://blog.devops.dev/understanding-race-conditions-in-software-development-805e771bb660)
+Since threads can be scheduled in non-deterministic ways, race conditions can be elusive and challenging to debug. A Simple Example of a Race Condition. Consider a simple 
+banking application where two users are trying to withdraw money from the same bank account simultaneously. Here's a simplified representation of the scenario:
+
+[Race condition in multithreading and it's solution in java](https://www.javamadesoeasy.com/2015/03/race-condition-in-multithreading-and.html)
+When more than one thread try to access same resource without synchronization causes race condition. So we can solve race condition by using either synchronized block or 
+synchronized method . When no two threads can access same resource at a time phenomenon is also called as mutual exclusion .
+
+Out: None
+[Step 1: Duration 2.63 seconds| Input tokens: 2,069 | Output tokens: 130]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought:                                                                                                                                                                         
+From the search results, I see many references to a classic banking race condition: multiple threads accessing and modifying a shared account balance. Typically, the issue      
+occurs when updates to a balance are not atomic, leading to inconsistent or incorrect values. The usual way to fix this is to introduce a lock (or synchronized block) to ensure 
+only one thread can access the critical section at a time. I'll write a Python example using `threading.Lock` to demonstrate both the issue and the fix.                         
+                                                                                                                                                                                 
+Code:                                                                                                                                                                            
+```py                                                                                                                                                                            
+import threading                                                                                                                                                                 
+import time                                                                                                                                                                      
+                                                                                                                                                                                 
+# A buggy banking account class with a classic race condition                                                                                                                    
+class BankAccount:                                                                                                                                                               
+    def __init__(self):                                                                                                                                                          
+        self.balance = 0                                                                                                                                                         
+                                                                                                                                                                                 
+    # No locking - this is buggy!                                                                                                                                                
+    def deposit(self, amount):                                                                                                                                                   
+        temp = self.balance                                                                                                                                                      
+        # Simulate context switch                                                                                                                                                
+        time.sleep(0.00001)                                                                                                                                                      
+        temp += amount                                                                                                                                                           
+        self.balance = temp                                                                                                                                                      
+                                                                                                                                                                                 
+    def withdraw(self, amount):                                                                                                                                                  
+        temp = self.balance                                                                                                                                                      
+        time.sleep(0.00001)                                                                                                                                                      
+        temp -= amount                                                                                                                                                           
+        self.balance = temp                                                                                                                                                      
+                                                                                                                                                                                 
+# Now, let's run two threads that concurrently deposit and withdraw money                                                                                                        
+account = BankAccount()                                                                                                                                                          
+                                                                                                                                                                                 
+def do_transactions():                                                                                                                                                           
+    for _ in range(1000):                                                                                                                                                        
+        account.deposit(5)                                                                                                                                                       
+        account.withdraw(5)                                                                                                                                                      
+                                                                                                                                                                                 
+threads = []                                                                                                                                                                     
+for _ in range(2):                                                                                                                                                               
+    t = threading.Thread(target=do_transactions)                                                                                                                                 
+    threads.append(t)                                                                                                                                                            
+    t.start()                                                                                                                                                                    
+                                                                                                                                                                                 
+for t in threads:                                                                                                                                                                
+    t.join()                                                                                                                                                                     
+                                                                                                                                                                                 
+print("Balance WITHOUT lock (should be 0):", account.balance)                                                                                                                    
+                                                                                                                                                                                 
+# Now, let's fix the race using a Lock                                                                                                                                           
+class SafeBankAccount:                                                                                                                                                           
+    def __init__(self):                                                                                                                                                          
+        self.balance = 0                                                                                                                                                         
+        self.lock = threading.Lock()                                                                                                                                             
+                                                                                                                                                                                 
+    def deposit(self, amount):                                                                                                                                                   
+        with self.lock:                                                                                                                                                          
+            temp = self.balance                                                                                                                                                  
+            time.sleep(0.00001)                                                                                                                                                  
+            temp += amount                                                                                                                                                       
+            self.balance = temp                                                                                                                                                  
+                                                                                                                                                                                 
+    def withdraw(self, amount):                                                                                                                                                  
+        with self.lock:                                                                                                                                                          
+            temp = self.balance                                                                                                                                                  
+            time.sleep(0.00001)                                                                                                                                                  
+            temp -= amount                                                                                                                                                       
+            self.balance = temp                                                                                                                                                  
+                                                                                                                                                                                 
+safe_account = SafeBankAccount()                                                                                                                                                 
+                                                                                                                                                                                 
+def do_safe_transactions():                                                                                                                                                      
+    for _ in range(1000):                                                                                                                                                        
+        safe_account.deposit(5)                                                                                                                                                  
+        safe_account.withdraw(5)                                                                                                                                                 
+                                                                                                                                                                                 
+threads = []                                                                                                                                                                     
+for _ in range(2):                                                                                                                                                               
+    t = threading.Thread(target=do_safe_transactions)                                                                                                                            
+    threads.append(t)                                                                                                                                                            
+    t.start()                                                                                                                                                                    
+                                                                                                                                                                                 
+for t in threads:                                                                                                                                                                
+    t.join()                                                                                                                                                                     
+                                                                                                                                                                                 
+print("Balance WITH lock (should be 0):", safe_account.balance)                                                                                                                  
+```                                                                                                                                                                              
+ ─ Executing parsed code: ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  import threading                                                                                                                                                               
+  import time                                                                                                                                                                    
+                                                                                                                                                                                 
+  # A buggy banking account class with a classic race condition                                                                                                                  
+  class BankAccount:                                                                                                                                                             
+      def __init__(self):                                                                                                                                                        
+          self.balance = 0                                                                                                                                                       
+                                                                                                                                                                                 
+      # No locking - this is buggy!                                                                                                                                              
+      def deposit(self, amount):                                                                                                                                                 
+          temp = self.balance                                                                                                                                                    
+          # Simulate context switch                                                                                                                                              
+          time.sleep(0.00001)                                                                                                                                                    
+          temp += amount                                                                                                                                                         
+          self.balance = temp                                                                                                                                                    
+                                                                                                                                                                                 
+      def withdraw(self, amount):                                                                                                                                                
+          temp = self.balance                                                                                                                                                    
+          time.sleep(0.00001)                                                                                                                                                    
+          temp -= amount                                                                                                                                                         
+          self.balance = temp                                                                                                                                                    
+                                                                                                                                                                                 
+  # Now, let's run two threads that concurrently deposit and withdraw money                                                                                                      
+  account = BankAccount()                                                                                                                                                        
+                                                                                                                                                                                 
+  def do_transactions():                                                                                                                                                         
+      for _ in range(1000):                                                                                                                                                      
+          account.deposit(5)                                                                                                                                                     
+          account.withdraw(5)                                                                                                                                                    
+                                                                                                                                                                                 
+  threads = []                                                                                                                                                                   
+  for _ in range(2):                                                                                                                                                             
+      t = threading.Thread(target=do_transactions)                                                                                                                               
+      threads.append(t)                                                                                                                                                          
+      t.start()                                                                                                                                                                  
+                                                                                                                                                                                 
+  for t in threads:                                                                                                                                                              
+      t.join()                                                                                                                                                                   
+                                                                                                                                                                                 
+  print("Balance WITHOUT lock (should be 0):", account.balance)                                                                                                                  
+                                                                                                                                                                                 
+  # Now, let's fix the race using a Lock                                                                                                                                         
+  class SafeBankAccount:                                                                                                                                                         
+      def __init__(self):                                                                                                                                                        
+          self.balance = 0                                                                                                                                                       
+          self.lock = threading.Lock()                                                                                                                                           
+                                                                                                                                                                                 
+      def deposit(self, amount):                                                                                                                                                 
+          with self.lock:                                                                                                                                                        
+              temp = self.balance                                                                                                                                                
+              time.sleep(0.00001)                                                                                                                                                
+              temp += amount                                                                                                                                                     
+              self.balance = temp                                                                                                                                                
+                                                                                                                                                                                 
+      def withdraw(self, amount):                                                                                                                                                
+          with self.lock:                                                                                                                                                        
+              temp = self.balance                                                                                                                                                
+              time.sleep(0.00001)                                                                                                                                                
+              temp -= amount                                                                                                                                                     
+              self.balance = temp                                                                                                                                                
+                                                                                                                                                                                 
+  safe_account = SafeBankAccount()                                                                                                                                               
+                                                                                                                                                                                 
+  def do_safe_transactions():                                                                                                                                                    
+      for _ in range(1000):                                                                                                                                                      
+          safe_account.deposit(5)                                                                                                                                                
+          safe_account.withdraw(5)                                                                                                                                               
+                                                                                                                                                                                 
+  threads = []                                                                                                                                                                   
+  for _ in range(2):                                                                                                                                                             
+      t = threading.Thread(target=do_safe_transactions)                                                                                                                          
+      threads.append(t)                                                                                                                                                          
+      t.start()                                                                                                                                                                  
+                                                                                                                                                                                 
+  for t in threads:                                                                                                                                                              
+      t.join()                                                                                                                                                                   
+                                                                                                                                                                                 
+  print("Balance WITH lock (should be 0):", safe_account.balance)                                                                                                                
+ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Warning to user: Code execution failed due to an unauthorized import - Consider passing said import under `additional_authorized_imports` when initializing your CodeAgent.
+Code execution failed at line 'import threading' due to: InterpreterError: Import of threading is not allowed. Authorized imports are: ['math', 'time', 'unicodedata', 'queue', 
+'re', 'stat', 'datetime', 'itertools', 'random', 'statistics', 'collections'\]
+[Step 2: Duration 3.79 seconds| Input tokens: 5,320 | Output tokens: 654]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 3 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought:                                                                                                                                                                         
+The previous code failed because importing `threading` is not allowed. Since I cannot use actual threads, I need to pivot: I will illustrate (in code and explanation) where the 
+race condition happens, and show the fix conceptually. I'll provide code that simulates what happens when two "threads" (represented by function calls, not real threads)        
+interleave. Then, I'll explain how using a lock would fix this, even if I can't use `threading.Lock`.                                                                            
+                                                                                                                                                                                 
+Code:                                                                                                                                                                            
+```py                                                                                                                                                                            
+# Simulating race condition with function calls to show what goes wrong                                                                                                          
+import time                                                                                                                                                                      
+                                                                                                                                                                                 
+class BankAccount:                                                                                                                                                               
+    def __init__(self):                                                                                                                                                          
+        self.balance = 100                                                                                                                                                       
+                                                                                                                                                                                 
+    def deposit(self, amount):                                                                                                                                                   
+        temp = self.balance                                                                                                                                                      
+        time.sleep(0.00001)  # Simulate context switch                                                                                                                           
+        temp += amount                                                                                                                                                           
+        self.balance = temp                                                                                                                                                      
+                                                                                                                                                                                 
+    def withdraw(self, amount):                                                                                                                                                  
+        temp = self.balance                                                                                                                                                      
+        time.sleep(0.00001)  # Simulate context switch                                                                                                                           
+        temp -= amount                                                                                                                                                           
+        self.balance = temp                                                                                                                                                      
+                                                                                                                                                                                 
+account = BankAccount()                                                                                                                                                          
+                                                                                                                                                                                 
+# Simulate two operations interleaving (no true threads, but step by step)                                                                                                       
+# Thread 1: deposit(10)                                                                                                                                                          
+# Thread 2: withdraw(10)                                                                                                                                                         
+                                                                                                                                                                                 
+# Step 1: Both fetch balance at almost the same time                                                                                                                             
+temp1 = account.balance  # Thread 1 reads 100                                                                                                                                    
+temp2 = account.balance  # Thread 2 reads 100                                                                                                                                    
+                                                                                                                                                                                 
+# Step 2: Each does its arithmetic                                                                                                                                               
+temp1 += 10  # 110 by thread 1                                                                                                                                                   
+temp2 -= 10  # 90 by thread 2                                                                                                                                                    
+                                                                                                                                                                                 
+# Step 3: Both write back (order lost!)                                                                                                                                          
+account.balance = temp1  # Thread 1 writes 110                                                                                                                                   
+account.balance = temp2  # Thread 2 writes 90                                                                                                                                    
+                                                                                                                                                                                 
+# Correct answer should be 100 + 10 - 10 = 100, but could be 90 or 110!                                                                                                          
+print("Final balance (should be 100; race condition result):", account.balance)                                                                                                  
+                                                                                                                                                                                 
+# The FIX: operation should be atomic. In real systems, this is handled using a lock.                                                                                            
+fix_explanation = (                                                                                                                                                              
+    "To fix the race condition, protect the critical section (balance update) with a mutex/lock, "                                                                               
+    "so only one thread can perform read-modify-write at a time. For example in Python you would do:\n"                                                                          
+    "with lock:\n"                                                                                                                                                               
+    "    temp = self.balance\n"                                                                                                                                                  
+    "    temp += amount\n"                                                                                                                                                       
+    "    self.balance = temp\n"                                                                                                                                                  
+    "This ensures consistency even with concurrent operations."                                                                                                                  
+)                                                                                                                                                                                
+                                                                                                                                                                                 
+print(fix_explanation)                                                                                                                                                           
+```                                                                                                                                                                              
+ ─ Executing parsed code: ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  # Simulating race condition with function calls to show what goes wrong                                                                                                        
+  import time                                                                                                                                                                    
+                                                                                                                                                                                 
+  class BankAccount:                                                                                                                                                             
+      def __init__(self):                                                                                                                                                        
+          self.balance = 100                                                                                                                                                     
+                                                                                                                                                                                 
+      def deposit(self, amount):                                                                                                                                                 
+          temp = self.balance                                                                                                                                                    
+          time.sleep(0.00001)  # Simulate context switch                                                                                                                         
+          temp += amount                                                                                                                                                         
+          self.balance = temp                                                                                                                                                    
+                                                                                                                                                                                 
+      def withdraw(self, amount):                                                                                                                                                
+          temp = self.balance                                                                                                                                                    
+          time.sleep(0.00001)  # Simulate context switch                                                                                                                         
+          temp -= amount                                                                                                                                                         
+          self.balance = temp                                                                                                                                                    
+                                                                                                                                                                                 
+  account = BankAccount()                                                                                                                                                        
+                                                                                                                                                                                 
+  # Simulate two operations interleaving (no true threads, but step by step)                                                                                                     
+  # Thread 1: deposit(10)                                                                                                                                                        
+  # Thread 2: withdraw(10)                                                                                                                                                       
+                                                                                                                                                                                 
+  # Step 1: Both fetch balance at almost the same time                                                                                                                           
+  temp1 = account.balance  # Thread 1 reads 100                                                                                                                                  
+  temp2 = account.balance  # Thread 2 reads 100                                                                                                                                  
+                                                                                                                                                                                 
+  # Step 2: Each does its arithmetic                                                                                                                                             
+  temp1 += 10  # 110 by thread 1                                                                                                                                                 
+  temp2 -= 10  # 90 by thread 2                                                                                                                                                  
+                                                                                                                                                                                 
+  # Step 3: Both write back (order lost!)                                                                                                                                        
+  account.balance = temp1  # Thread 1 writes 110                                                                                                                                 
+  account.balance = temp2  # Thread 2 writes 90                                                                                                                                  
+                                                                                                                                                                                 
+  # Correct answer should be 100 + 10 - 10 = 100, but could be 90 or 110!                                                                                                        
+  print("Final balance (should be 100; race condition result):", account.balance)                                                                                                
+                                                                                                                                                                                 
+  # The FIX: operation should be atomic. In real systems, this is handled using a lock.                                                                                          
+  fix_explanation = (                                                                                                                                                            
+      "To fix the race condition, protect the critical section (balance update) with a mutex/lock, "                                                                             
+      "so only one thread can perform read-modify-write at a time. For example in Python you would do:\n"                                                                        
+      "with lock:\n"                                                                                                                                                             
+      "    temp = self.balance\n"                                                                                                                                                
+      "    temp += amount\n"                                                                                                                                                     
+      "    self.balance = temp\n"                                                                                                                                                
+      "This ensures consistency even with concurrent operations."                                                                                                                
+  )                                                                                                                                                                              
+                                                                                                                                                                                 
+  print(fix_explanation)                                                                                                                                                         
+ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Execution logs:
+Final balance (should be 100; race condition result): 90
+To fix the race condition, protect the critical section (balance update) with a mutex/lock, so only one thread can perform read-modify-write at a time. For example in Python you
+would do:
+with lock:
+    temp = self.balance
+    temp += amount
+    self.balance = temp
+This ensures consistency even with concurrent operations.
+
+Out: None
+[Step 3: Duration 4.59 seconds| Input tokens: 9,732 | Output tokens: 1,203]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 4 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought:                                                                                                                                                                         
+The simulation demonstrates how a race condition can occur in a multi-threaded banking application: concurrent deposit and withdrawal operations, if not synchronized, can lead  
+to an incorrect account balance (e.g., 90 instead of the correct 100). The fix is to use a lock to protect the critical section so only one thread can update the balance at a   
+time. Since I cannot use threads or locks here, I have explained and illustrated the principle.                                                                                  
+                                                                                                                                                                                 
+Code:                                                                                                                                                                            
+```py                                                                                                                                                                            
+final_answer(                                                                                                                                                                    
+    "The race condition occurs because multiple threads read and write the account balance at the same time, leading to incorrect results. "                                     
+    "The fix is to protect the critical section (balance update) with a lock or mutex so only one thread can perform the update at a time. "                                     
+    "In Python, you would use 'with lock:' around the balance update code to ensure atomicity and prevent race conditions."                                                      
+)                                                                                                                                                                                
+```                                                                                                                                                                              
+ ─ Executing parsed code: ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  final_answer(                                                                                                                                                                  
+      "The race condition occurs because multiple threads read and write the account balance at the same time, leading to incorrect results. "                                   
+      "The fix is to protect the critical section (balance update) with a lock or mutex so only one thread can perform the update at a time. "                                   
+      "In Python, you would use 'with lock:' around the balance update code to ensure atomicity and prevent race conditions."                                                    
+  )                                                                                                                                                                              
+ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Out - Final answer: The race condition occurs because multiple threads read and write the account balance at the same time, leading to incorrect results. The fix is to protect 
+the critical section (balance update) with a lock or mutex so only one thread can perform the update at a time. In Python, you would use 'with lock:' around the balance update 
+code to ensure atomicity and prevent race conditions.
+[Step 4: Duration 1.97 seconds| Input tokens: 15,323 | Output tokens: 1,388]
+
+Output:
+The race condition occurs because multiple threads read and write the account balance at the same time, leading to incorrect results. The fix is to protect the critical section (balance update) with a lock or mutex so only one thread can perform the update at a time. In Python, you would use 'with lock:' around the balance update code to ensure atomicity and prevent race conditions.
+
+Task 97 complete.
+------------------------------------------------------------

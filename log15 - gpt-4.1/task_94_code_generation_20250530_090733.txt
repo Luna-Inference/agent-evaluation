@@ -1,0 +1,523 @@
+
+================================================================================
+Task 94/183: Implement a thread-safe LRU cache in Java with generic type support and optimal time complexity.
+Category: Creative & Generation Tasks | Type: code-generation | Difficulty: difficult
+================================================================================
+
+╭─────────────────────────────────────────────────────────────────────────────────── New run ───────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                                                                               │
+│ Implement a thread-safe LRU cache in Java with generic type support and optimal time complexity.                                                                              │
+│                                                                                                                                                                               │
+╰─ LiteLLMModel - azure/gpt-4.1 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 1 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought:                                                                                                                                                                         
+Since the task is to implement a thread-safe LRU (Least Recently Used) cache in Java, with generic type support, and with optimal time complexities (ideally O(1) for get/put), I
+will aim for a design using a `HashMap` for fast lookups and a doubly-linked list for fast removal/insertion for LRU ordering. For thread-safety, I'll use `synchronized` blocks.
+I'll provide a complete Java class with generics, and methods `get`, `put`, and the necessary data structures.                                                                   
+                                                                                                                                                                                 
+Code:                                                                                                                                                                            
+```java                                                                                                                                                                          
+import java.util.HashMap;                                                                                                                                                        
+import java.util.Map;                                                                                                                                                            
+                                                                                                                                                                                 
+/**                                                                                                                                                                              
+ * Thread-safe generic LRU Cache implementation with O(1) get and put operations.                                                                                                
+ */                                                                                                                                                                              
+public class LRUCache<K, V> {                                                                                                                                                    
+    private final int capacity;                                                                                                                                                  
+    private final Map<K, Node<K,V>> cache;                                                                                                                                       
+    private final Node<K,V> head;                                                                                                                                                
+    private final Node<K,V> tail;                                                                                                                                                
+                                                                                                                                                                                 
+    private static class Node<K,V> {                                                                                                                                             
+        K key;                                                                                                                                                                   
+        V value;                                                                                                                                                                 
+        Node<K,V> prev;                                                                                                                                                          
+        Node<K,V> next;                                                                                                                                                          
+        Node() {} // Sentinel                                                                                                                                                    
+        Node(K key, V value) {                                                                                                                                                   
+            this.key = key;                                                                                                                                                      
+            this.value = value;                                                                                                                                                  
+        }                                                                                                                                                                        
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    public LRUCache(int capacity) {                                                                                                                                              
+        this.capacity = capacity;                                                                                                                                                
+        this.cache = new HashMap<>();                                                                                                                                            
+        this.head = new Node<>();                                                                                                                                                
+        this.tail = new Node<>();                                                                                                                                                
+        head.next = tail;                                                                                                                                                        
+        tail.prev = head;                                                                                                                                                        
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    public V get(K key) {                                                                                                                                                        
+        synchronized (this) {                                                                                                                                                    
+            Node<K, V> node = cache.get(key);                                                                                                                                    
+            if (node == null) {                                                                                                                                                  
+                return null;                                                                                                                                                     
+            }                                                                                                                                                                    
+            moveToHead(node);                                                                                                                                                    
+            return node.value;                                                                                                                                                   
+        }                                                                                                                                                                        
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    public void put(K key, V value) {                                                                                                                                            
+        synchronized (this) {                                                                                                                                                    
+            Node<K, V> node = cache.get(key);                                                                                                                                    
+            if (node == null) {                                                                                                                                                  
+                Node<K, V> newNode = new Node<>(key, value);                                                                                                                     
+                cache.put(key, newNode);                                                                                                                                         
+                addToHead(newNode);                                                                                                                                              
+                if (cache.size() > capacity) {                                                                                                                                   
+                    Node<K, V> tailNode = popTail();                                                                                                                             
+                    if (tailNode != null) {                                                                                                                                      
+                        cache.remove(tailNode.key);                                                                                                                              
+                    }                                                                                                                                                            
+                }                                                                                                                                                                
+            } else {                                                                                                                                                             
+                node.value = value;                                                                                                                                              
+                moveToHead(node);                                                                                                                                                
+            }                                                                                                                                                                    
+        }                                                                                                                                                                        
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    private void addToHead(Node<K, V> node) {                                                                                                                                    
+        node.prev = head;                                                                                                                                                        
+        node.next = head.next;                                                                                                                                                   
+        head.next.prev = node;                                                                                                                                                   
+        head.next = node;                                                                                                                                                        
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    private void moveToHead(Node<K, V> node) {                                                                                                                                   
+        removeNode(node);                                                                                                                                                        
+        addToHead(node);                                                                                                                                                         
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    private void removeNode(Node<K, V> node) {                                                                                                                                   
+        node.prev.next = node.next;                                                                                                                                              
+        node.next.prev = node.prev;                                                                                                                                              
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    private Node<K, V> popTail() {                                                                                                                                               
+        if (tail.prev == head) {                                                                                                                                                 
+            return null;                                                                                                                                                         
+        }                                                                                                                                                                        
+        Node<K, V> node = tail.prev;                                                                                                                                             
+        removeNode(node);                                                                                                                                                        
+        return node;                                                                                                                                                             
+    }                                                                                                                                                                            
+}                                                                                                                                                                                
+```                                                                                                                                                                              
+                                                                                                                                                                                 
+Error in code parsing:
+Your code snippet is invalid, because the regex pattern ```(?:py|python)?\s*\n(.*?)\n``` was not found in it.
+            Here is your code snippet:
+            Thought:  
+Since the task is to implement a thread-safe LRU (Least Recently Used) cache in Java, with generic type support, and with optimal time complexities (ideally O(1) for get/put), I
+will aim for a design using a `HashMap` for fast lookups and a doubly-linked list for fast removal/insertion for LRU ordering. For thread-safety, I'll use `synchronized` blocks.
+I'll provide a complete Java class with generics, and methods `get`, `put`, and the necessary data structures.
+
+Code:
+```java
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Thread-safe generic LRU Cache implementation with O(1) get and put operations.
+ */
+public class LRUCache<K, V> {
+    private final int capacity;
+    private final Map<K, Node<K,V>> cache;
+    private final Node<K,V> head;
+    private final Node<K,V> tail;
+
+    private static class Node<K,V> {
+        K key;
+        V value;
+        Node<K,V> prev;
+        Node<K,V> next;
+        Node() {} // Sentinel
+        Node(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
+    }
+
+    public LRUCache(int capacity) {
+        this.capacity = capacity;
+        this.cache = new HashMap<>();
+        this.head = new Node<>();
+        this.tail = new Node<>();
+        head.next = tail;
+        tail.prev = head;
+    }
+
+    public V get(K key) {
+        synchronized (this) {
+            Node<K, V> node = cache.get(key);
+            if (node == null) {
+                return null;
+            }
+            moveToHead(node);
+            return node.value;
+        }
+    }
+
+    public void put(K key, V value) {
+        synchronized (this) {
+            Node<K, V> node = cache.get(key);
+            if (node == null) {
+                Node<K, V> newNode = new Node<>(key, value);
+                cache.put(key, newNode);
+                addToHead(newNode);
+                if (cache.size() > capacity) {
+                    Node<K, V> tailNode = popTail();
+                    if (tailNode != null) {
+                        cache.remove(tailNode.key);
+                    }
+                }
+            } else {
+                node.value = value;
+                moveToHead(node);
+            }
+        }
+    }
+
+    private void addToHead(Node<K, V> node) {
+        node.prev = head;
+        node.next = head.next;
+        head.next.prev = node;
+        head.next = node;
+    }
+
+    private void moveToHead(Node<K, V> node) {
+        removeNode(node);
+        addToHead(node);
+    }
+
+    private void removeNode(Node<K, V> node) {
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+    }
+
+    private Node<K, V> popTail() {
+        if (tail.prev == head) {
+            return null;
+        }
+        Node<K, V> node = tail.prev;
+        removeNode(node);
+        return node;
+    }
+}
+```
+<end_code>
+            Make sure to include code with the correct pattern, for instance:
+            Thoughts: Your thoughts
+            Code:
+            ```py
+            # Your python code here
+            ```<end_code>
+Make sure to provide correct code blobs.
+[Step 1: Duration 4.15 seconds| Input tokens: 2,067 | Output tokens: 650]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought:                                                                                                                                                                         
+I cannot run Java directly here, but I can explain how to implement such a thread-safe LRU cache in Java. Since the interface expects Python code, I will provide a summary and  
+the Java implementation as a string, so it can be copied and used. I will print out the exact code for the user.                                                                 
+                                                                                                                                                                                 
+Code:                                                                                                                                                                            
+```py                                                                                                                                                                            
+java_code = """                                                                                                                                                                  
+import java.util.HashMap;                                                                                                                                                        
+import java.util.Map;                                                                                                                                                            
+                                                                                                                                                                                 
+/**                                                                                                                                                                              
+ * Thread-safe generic LRU Cache implementation with O(1) get and put operations.                                                                                                
+ */                                                                                                                                                                              
+public class LRUCache<K, V> {                                                                                                                                                    
+    private final int capacity;                                                                                                                                                  
+    private final Map<K, Node<K,V>> cache;                                                                                                                                       
+    private final Node<K,V> head;                                                                                                                                                
+    private final Node<K,V> tail;                                                                                                                                                
+                                                                                                                                                                                 
+    private static class Node<K,V> {                                                                                                                                             
+        K key;                                                                                                                                                                   
+        V value;                                                                                                                                                                 
+        Node<K,V> prev;                                                                                                                                                          
+        Node<K,V> next;                                                                                                                                                          
+        Node() {} // Sentinel                                                                                                                                                    
+        Node(K key, V value) {                                                                                                                                                   
+            this.key = key;                                                                                                                                                      
+            this.value = value;                                                                                                                                                  
+        }                                                                                                                                                                        
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    public LRUCache(int capacity) {                                                                                                                                              
+        this.capacity = capacity;                                                                                                                                                
+        this.cache = new HashMap<>();                                                                                                                                            
+        this.head = new Node<>();                                                                                                                                                
+        this.tail = new Node<>();                                                                                                                                                
+        head.next = tail;                                                                                                                                                        
+        tail.prev = head;                                                                                                                                                        
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    public V get(K key) {                                                                                                                                                        
+        synchronized (this) {                                                                                                                                                    
+            Node<K, V> node = cache.get(key);                                                                                                                                    
+            if (node == null) {                                                                                                                                                  
+                return null;                                                                                                                                                     
+            }                                                                                                                                                                    
+            moveToHead(node);                                                                                                                                                    
+            return node.value;                                                                                                                                                   
+        }                                                                                                                                                                        
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    public void put(K key, V value) {                                                                                                                                            
+        synchronized (this) {                                                                                                                                                    
+            Node<K, V> node = cache.get(key);                                                                                                                                    
+            if (node == null) {                                                                                                                                                  
+                Node<K, V> newNode = new Node<>(key, value);                                                                                                                     
+                cache.put(key, newNode);                                                                                                                                         
+                addToHead(newNode);                                                                                                                                              
+                if (cache.size() > capacity) {                                                                                                                                   
+                    Node<K, V> tailNode = popTail();                                                                                                                             
+                    if (tailNode != null) {                                                                                                                                      
+                        cache.remove(tailNode.key);                                                                                                                              
+                    }                                                                                                                                                            
+                }                                                                                                                                                                
+            } else {                                                                                                                                                             
+                node.value = value;                                                                                                                                              
+                moveToHead(node);                                                                                                                                                
+            }                                                                                                                                                                    
+        }                                                                                                                                                                        
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    private void addToHead(Node<K, V> node) {                                                                                                                                    
+        node.prev = head;                                                                                                                                                        
+        node.next = head.next;                                                                                                                                                   
+        head.next.prev = node;                                                                                                                                                   
+        head.next = node;                                                                                                                                                        
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    private void moveToHead(Node<K, V> node) {                                                                                                                                   
+        removeNode(node);                                                                                                                                                        
+        addToHead(node);                                                                                                                                                         
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    private void removeNode(Node<K, V> node) {                                                                                                                                   
+        node.prev.next = node.next;                                                                                                                                              
+        node.next.prev = node.prev;                                                                                                                                              
+    }                                                                                                                                                                            
+                                                                                                                                                                                 
+    private Node<K, V> popTail() {                                                                                                                                               
+        if (tail.prev == head) {                                                                                                                                                 
+            return null;                                                                                                                                                         
+        }                                                                                                                                                                        
+        Node<K, V> node = tail.prev;                                                                                                                                             
+        removeNode(node);                                                                                                                                                        
+        return node;                                                                                                                                                             
+    }                                                                                                                                                                            
+}                                                                                                                                                                                
+"""                                                                                                                                                                              
+print(java_code)                                                                                                                                                                 
+final_answer("The code above is a complete thread-safe generic LRUCache in Java with optimal time complexities.")                                                                
+```                                                                                                                                                                              
+ ─ Executing parsed code: ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  java_code = """                                                                                                                                                                
+  import java.util.HashMap;                                                                                                                                                      
+  import java.util.Map;                                                                                                                                                          
+                                                                                                                                                                                 
+  /**                                                                                                                                                                            
+   * Thread-safe generic LRU Cache implementation with O(1) get and put operations.                                                                                              
+   */                                                                                                                                                                            
+  public class LRUCache<K, V> {                                                                                                                                                  
+      private final int capacity;                                                                                                                                                
+      private final Map<K, Node<K,V>> cache;                                                                                                                                     
+      private final Node<K,V> head;                                                                                                                                              
+      private final Node<K,V> tail;                                                                                                                                              
+                                                                                                                                                                                 
+      private static class Node<K,V> {                                                                                                                                           
+          K key;                                                                                                                                                                 
+          V value;                                                                                                                                                               
+          Node<K,V> prev;                                                                                                                                                        
+          Node<K,V> next;                                                                                                                                                        
+          Node() {} // Sentinel                                                                                                                                                  
+          Node(K key, V value) {                                                                                                                                                 
+              this.key = key;                                                                                                                                                    
+              this.value = value;                                                                                                                                                
+          }                                                                                                                                                                      
+      }                                                                                                                                                                          
+                                                                                                                                                                                 
+      public LRUCache(int capacity) {                                                                                                                                            
+          this.capacity = capacity;                                                                                                                                              
+          this.cache = new HashMap<>();                                                                                                                                          
+          this.head = new Node<>();                                                                                                                                              
+          this.tail = new Node<>();                                                                                                                                              
+          head.next = tail;                                                                                                                                                      
+          tail.prev = head;                                                                                                                                                      
+      }                                                                                                                                                                          
+                                                                                                                                                                                 
+      public V get(K key) {                                                                                                                                                      
+          synchronized (this) {                                                                                                                                                  
+              Node<K, V> node = cache.get(key);                                                                                                                                  
+              if (node == null) {                                                                                                                                                
+                  return null;                                                                                                                                                   
+              }                                                                                                                                                                  
+              moveToHead(node);                                                                                                                                                  
+              return node.value;                                                                                                                                                 
+          }                                                                                                                                                                      
+      }                                                                                                                                                                          
+                                                                                                                                                                                 
+      public void put(K key, V value) {                                                                                                                                          
+          synchronized (this) {                                                                                                                                                  
+              Node<K, V> node = cache.get(key);                                                                                                                                  
+              if (node == null) {                                                                                                                                                
+                  Node<K, V> newNode = new Node<>(key, value);                                                                                                                   
+                  cache.put(key, newNode);                                                                                                                                       
+                  addToHead(newNode);                                                                                                                                            
+                  if (cache.size() > capacity) {                                                                                                                                 
+                      Node<K, V> tailNode = popTail();                                                                                                                           
+                      if (tailNode != null) {                                                                                                                                    
+                          cache.remove(tailNode.key);                                                                                                                            
+                      }                                                                                                                                                          
+                  }                                                                                                                                                              
+              } else {                                                                                                                                                           
+                  node.value = value;                                                                                                                                            
+                  moveToHead(node);                                                                                                                                              
+              }                                                                                                                                                                  
+          }                                                                                                                                                                      
+      }                                                                                                                                                                          
+                                                                                                                                                                                 
+      private void addToHead(Node<K, V> node) {                                                                                                                                  
+          node.prev = head;                                                                                                                                                      
+          node.next = head.next;                                                                                                                                                 
+          head.next.prev = node;                                                                                                                                                 
+          head.next = node;                                                                                                                                                      
+      }                                                                                                                                                                          
+                                                                                                                                                                                 
+      private void moveToHead(Node<K, V> node) {                                                                                                                                 
+          removeNode(node);                                                                                                                                                      
+          addToHead(node);                                                                                                                                                       
+      }                                                                                                                                                                          
+                                                                                                                                                                                 
+      private void removeNode(Node<K, V> node) {                                                                                                                                 
+          node.prev.next = node.next;                                                                                                                                            
+          node.next.prev = node.prev;                                                                                                                                            
+      }                                                                                                                                                                          
+                                                                                                                                                                                 
+      private Node<K, V> popTail() {                                                                                                                                             
+          if (tail.prev == head) {                                                                                                                                               
+              return null;                                                                                                                                                       
+          }                                                                                                                                                                      
+          Node<K, V> node = tail.prev;                                                                                                                                           
+          removeNode(node);                                                                                                                                                      
+          return node;                                                                                                                                                           
+      }                                                                                                                                                                          
+  }                                                                                                                                                                              
+  """                                                                                                                                                                            
+  print(java_code)                                                                                                                                                               
+  final_answer("The code above is a complete thread-safe generic LRUCache in Java with optimal time complexities.")                                                              
+ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Execution logs:
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Thread-safe generic LRU Cache implementation with O(1) get and put operations.
+ */
+public class LRUCache<K, V> {
+    private final int capacity;
+    private final Map<K, Node<K,V>> cache;
+    private final Node<K,V> head;
+    private final Node<K,V> tail;
+
+    private static class Node<K,V> {
+        K key;
+        V value;
+        Node<K,V> prev;
+        Node<K,V> next;
+        Node() {} // Sentinel
+        Node(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
+    }
+
+    public LRUCache(int capacity) {
+        this.capacity = capacity;
+        this.cache = new HashMap<>();
+        this.head = new Node<>();
+        this.tail = new Node<>();
+        head.next = tail;
+        tail.prev = head;
+    }
+
+    public V get(K key) {
+        synchronized (this) {
+            Node<K, V> node = cache.get(key);
+            if (node == null) {
+                return null;
+            }
+            moveToHead(node);
+            return node.value;
+        }
+    }
+
+    public void put(K key, V value) {
+        synchronized (this) {
+            Node<K, V> node = cache.get(key);
+            if (node == null) {
+                Node<K, V> newNode = new Node<>(key, value);
+                cache.put(key, newNode);
+                addToHead(newNode);
+                if (cache.size() > capacity) {
+                    Node<K, V> tailNode = popTail();
+                    if (tailNode != null) {
+                        cache.remove(tailNode.key);
+                    }
+                }
+            } else {
+                node.value = value;
+                moveToHead(node);
+            }
+        }
+    }
+
+    private void addToHead(Node<K, V> node) {
+        node.prev = head;
+        node.next = head.next;
+        head.next.prev = node;
+        head.next = node;
+    }
+
+    private void moveToHead(Node<K, V> node) {
+        removeNode(node);
+        addToHead(node);
+    }
+
+    private void removeNode(Node<K, V> node) {
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+    }
+
+    private Node<K, V> popTail() {
+        if (tail.prev == head) {
+            return null;
+        }
+        Node<K, V> node = tail.prev;
+        removeNode(node);
+        return node;
+    }
+}
+
+
+Out - Final answer: The code above is a complete thread-safe generic LRUCache in Java with optimal time complexities.
+[Step 2: Duration 3.78 seconds| Input tokens: 5,570 | Output tokens: 1,281]
+
+Output:
+The code above is a complete thread-safe generic LRUCache in Java with optimal time complexities.
+
+Task 94 complete.
+------------------------------------------------------------
