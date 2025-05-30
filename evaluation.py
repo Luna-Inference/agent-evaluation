@@ -16,6 +16,7 @@ import glob
 from collections import defaultdict
 import csv
 from openai import AzureOpenAI
+import argparse
 
 import time
 
@@ -478,7 +479,7 @@ def update_summary_file(model_dir, model, model_results):
     print(f"Updated summary for {model} at {summary_file}")
 
 # Main function to evaluate all logs
-def evaluate_all_logs():
+def evaluate_all_logs(skip_evaluated=True):
     # Get OpenAI client
     client = get_openai_client()
     
@@ -545,8 +546,8 @@ def evaluate_all_logs():
             log_filename = os.path.basename(log_file)
             print(f"  Processing file {i+1}/{len(log_files)}: {log_filename}")
             
-            # Skip if already evaluated
-            if log_filename in evaluated_logs[model_name]:
+            # Skip if already evaluated and skip_evaluated is True
+            if skip_evaluated and log_filename in evaluated_logs[model_name]:
                 print(f"  Evaluation already exists, skipping: {log_filename}")
                 continue
             
@@ -805,7 +806,19 @@ def test_evaluation(max_logs_per_folder=5):
 
 # Run the evaluation if this script is executed directly
 if __name__ == "__main__":
-    # Comment/uncomment the appropriate line to switch between full evaluation and test
-    # test_evaluation(5)  # Run quick test with 5 logs per folder
-    evaluate_all_logs()  # Run full evaluation
-
+    # Set up command line argument parsing
+    parser = argparse.ArgumentParser(description='Evaluate agent logs and generate summaries.')
+    parser.add_argument('--reevaluate', action='store_true', help='Reevaluate logs that have already been evaluated')
+    parser.add_argument('--test', action='store_true', help='Run in test mode with limited logs')
+    parser.add_argument('--max-logs', type=int, default=5, help='Maximum number of logs to process per folder in test mode')
+    args = parser.parse_args()
+    
+    if args.test:
+        print(f"Running in test mode with {args.max_logs} logs per folder")
+        test_evaluation(args.max_logs)  # Run test with specified number of logs per folder
+    else:
+        # Run full evaluation with skip_evaluated set according to reevaluate flag
+        evaluate_all_logs(skip_evaluated=not args.reevaluate)
+    
+    # Uncomment to generate evaluation files only
+    # generate_model_evaluation_files([], "./evaluation")
