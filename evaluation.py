@@ -806,6 +806,6 @@ def test_evaluation(max_logs_per_folder=5):
 # Run the evaluation if this script is executed directly
 if __name__ == "__main__":
     # Comment/uncomment the appropriate line to switch between full evaluation and test
-    test_evaluation(5)  # Run quick test with 5 logs per folder
-    # evaluate_all_logs()  # Run full evaluation
+    # test_evaluation(5)  # Run quick test with 5 logs per folder
+    evaluate_all_logs()  # Run full evaluation
 
