@@ -165,7 +165,7 @@ def evaluate_with_gpt(log_data, client):
         }
 
 # Generate per-model evaluation files
-def generate_model_evaluation_files(results, eval_dir):
+def generate_model_evaluation_files(results, eval_dir, incremental=False):
     print("\nGenerating per-model evaluation files...")
     
     if not results:
@@ -187,8 +187,8 @@ def generate_model_evaluation_files(results, eval_dir):
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
         
-        # Generate detailed evaluation file for this model
-        detailed_file = os.path.join(model_dir, "detailed_evaluation.txt")
+        # Generate detailed evaluation file for this model - one per log folder
+        detailed_file = os.path.join(model_dir, "evaluation.txt")
         with open(detailed_file, 'w', encoding='utf-8') as f:
             f.write(f"DETAILED EVALUATIONS FOR {model}\n")
             f.write("=" * 80 + "\n\n")
@@ -209,9 +209,9 @@ def generate_model_evaluation_files(results, eval_dir):
                 f.write(f"Explanation: {eval_data['explanation']}\n\n")
                 f.write("-" * 80 + "\n\n")
         
-        print(f"Detailed evaluation for {model} written to {detailed_file}")
+        print(f"Evaluation file for {model} written to {detailed_file}")
         
-        # Generate summary file for this model
+        # Generate summary file for this model - one per log folder
         summary_file = os.path.join(model_dir, "summary.txt")
         with open(summary_file, 'w', encoding='utf-8') as f:
             count = len(evals)
@@ -269,15 +269,21 @@ def generate_model_evaluation_files(results, eval_dir):
             for eval_data in evals:
                 category = eval_data["category"]
                 if category not in correct_by_category:
-                    correct_by_category[category] = {"correct": 0, "partial": 0, "incorrect": 0, "total": 0}
+                    correct_by_category[category] = {"yes": 0, "partial": 0, "no": 0, "error": 0, "total": 0}
                 
                 correct_by_category[category]["total"] += 1
-                correct_by_category[category][eval_data["correctness"]] += 1
+                # Handle the case when correctness might be 'error' or any other unexpected value
+                correctness = eval_data["correctness"]
+                if correctness in correct_by_category[category]:
+                    correct_by_category[category][correctness] += 1
+                else:
+                    # If we get an unexpected value, count it as error
+                    correct_by_category[category]["error"] += 1
             
             category_performance = {}
             for category, counts in correct_by_category.items():
                 if counts["total"] >= 2:  # Only consider categories with at least 2 examples
-                    score = (counts["correct"] + 0.5 * counts["partial"]) / counts["total"]
+                    score = (counts["yes"] + 0.5 * counts["partial"]) / counts["total"]
                     category_performance[category] = score
             
             if category_performance:
@@ -378,6 +384,99 @@ def generate_model_evaluation_files(results, eval_dir):
     
     print(f"Model comparison written to {comparison_file}")
 
+# Create or append to an evaluation file for a model
+def update_evaluation_file(model_dir, model, eval_data):
+    # Create model-specific directory if it doesn't exist
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    
+    # Path to the evaluation file
+    eval_file = os.path.join(model_dir, "evaluation.txt")
+    
+    # Check if file exists to determine if header is needed
+    file_exists = os.path.exists(eval_file)
+    
+    # Open the file in append mode
+    with open(eval_file, 'a', encoding='utf-8') as f:
+        # Write header if this is a new file
+        if not file_exists:
+            f.write(f"DETAILED EVALUATIONS FOR {model}\n")
+            f.write("=" * 80 + "\n\n")
+        
+        # Write evaluation data
+        f.write(f"Evaluation: {eval_data['task']}\n")
+        f.write("-" * 60 + "\n")
+        f.write(f"Task: {eval_data['task']}\n")
+        f.write(f"Answer: {eval_data['answer']}\n\n")
+        f.write(f"Correctness: {eval_data['correctness']}\n")
+        f.write(f"Misunderstanding count: {eval_data['misunderstanding_count']}\n")
+        f.write(f"Category: {eval_data['category']}\n")
+        f.write(f"Self-confidence: {eval_data['self_confidence']}\n\n")
+        f.write(f"Step count: {eval_data['step_count']}\n")
+        f.write(f"Failure count: {eval_data['failure_count']}\n")
+        f.write(f"Total tokens: {eval_data['total_tokens']} (Input: {eval_data['input_tokens']}, Output: {eval_data['output_tokens']})\n")
+        f.write(f"Total time: {eval_data['total_time']:.2f} seconds\n\n")
+        f.write(f"Explanation: {eval_data['explanation']}\n\n")
+        f.write("-" * 80 + "\n\n")
+
+    print(f"Updated evaluation file for {model} at {eval_file}")
+
+# Update the summary file for a model based on current results
+def update_summary_file(model_dir, model, model_results):
+    # Create model-specific directory if it doesn't exist
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+        
+    # Generate summary file for this model
+    summary_file = os.path.join(model_dir, "summary.txt")
+    with open(summary_file, 'w', encoding='utf-8') as f:
+        count = len(model_results)
+        correct = sum(1 for e in model_results if e["correctness"] == "yes")
+        partial = sum(1 for e in model_results if e["correctness"] == "partial")
+        incorrect = sum(1 for e in model_results if e["correctness"] == "no")
+        errors = sum(1 for e in model_results if e["correctness"] == "error")
+        
+        correct_pct = (correct + 0.5 * partial) / count * 100 if count > 0 else 0
+        avg_steps = sum(e["step_count"] for e in model_results) / count if count > 0 else 0
+        avg_failures = sum(e["failure_count"] for e in model_results) / count if count > 0 else 0
+        avg_misunderstandings = sum(e["misunderstanding_count"] for e in model_results) / count if count > 0 else 0
+        avg_tokens = sum(e["total_tokens"] for e in model_results) / count if count > 0 else 0
+        avg_time = sum(e["total_time"] for e in model_results) / count if count > 0 else 0
+        
+        # Count categories
+        categories = {}
+        for eval_data in model_results:
+            category = eval_data["category"]
+            if category in categories:
+                categories[category] += 1
+            else:
+                categories[category] = 1
+        
+        f.write(f"SUMMARY FOR {model}\n")
+        f.write("=" * 80 + "\n\n")
+        
+        f.write(f"Total evaluations: {count}\n\n")
+        f.write(f"Performance:\n")
+        f.write(f"  Correct: {correct} ({correct/count*100:.1f}%)\n" if count > 0 else "  Correct: 0 (0.0%)\n")
+        f.write(f"  Partially correct: {partial} ({partial/count*100:.1f}%)\n" if count > 0 else "  Partially correct: 0 (0.0%)\n")
+        f.write(f"  Incorrect: {incorrect} ({incorrect/count*100:.1f}%)\n" if count > 0 else "  Incorrect: 0 (0.0%)\n")
+        if errors > 0:
+            f.write(f"  Errors: {errors} ({errors/count*100:.1f}%)\n" if count > 0 else "  Errors: 0 (0.0%)\n")
+        f.write(f"  Overall correctness score: {correct_pct:.1f}%\n\n")
+        
+        f.write(f"Efficiency:\n")
+        f.write(f"  Average steps: {avg_steps:.1f}\n")
+        f.write(f"  Average failures: {avg_failures:.1f}\n")
+        f.write(f"  Average misunderstandings: {avg_misunderstandings:.1f}\n")
+        f.write(f"  Average tokens: {avg_tokens:.1f}\n")
+        f.write(f"  Average time: {avg_time:.1f} seconds\n\n")
+        
+        f.write(f"Categories:\n")
+        for category, count in sorted(categories.items(), key=lambda x: x[1], reverse=True):
+            f.write(f"  {category}: {count} ({count/len(model_results)*100:.1f}%)\n" if len(model_results) > 0 else f"  {category}: 0 (0.0%)\n")
+        
+    print(f"Updated summary for {model} at {summary_file}")
+
 # Main function to evaluate all logs
 def evaluate_all_logs():
     # Get OpenAI client
@@ -394,7 +493,8 @@ def evaluate_all_logs():
     print(f"Found {len(log_dirs)} log directories: {log_dirs}")
     
     # Prepare results storage
-    results = []
+    all_results = []          # All results across all models
+    model_results = {}        # Results organized by model
     
     # Track progress file to avoid re-evaluating logs
     progress_file = os.path.join(eval_dir, "evaluation_progress.json")
@@ -406,6 +506,20 @@ def evaluate_all_logs():
             with open(progress_file, 'r', encoding='utf-8') as f:
                 evaluated_logs = json.load(f)
             print(f"Loaded progress from {progress_file}")
+            
+            # Reconstruct model_results from evaluated_logs
+            for model_name, logs in evaluated_logs.items():
+                if model_name not in model_results:
+                    model_results[model_name] = []
+                for log_filename, result in logs.items():
+                    model_results[model_name].append(result)
+                    all_results.append(result)
+                    
+                # Update summary file with existing results
+                if model_name in model_results and model_results[model_name]:
+                    model_dir = os.path.join(eval_dir, model_name)
+                    update_summary_file(model_dir, model_name, model_results[model_name])
+                
         except Exception as e:
             print(f"Error loading progress file: {e}")
     
@@ -417,9 +531,14 @@ def evaluate_all_logs():
         
         model_name = os.path.basename(log_dir)
         
-        # Create model entry in evaluated logs if it doesn't exist
+        # Create model entry in evaluated logs and model_results if it doesn't exist
         if model_name not in evaluated_logs:
             evaluated_logs[model_name] = {}
+        if model_name not in model_results:
+            model_results[model_name] = []
+        
+        # Create model directory for evaluation files
+        model_dir = os.path.join(eval_dir, model_name)
         
         # Process each log file
         for i, log_file in enumerate(log_files):
@@ -429,7 +548,6 @@ def evaluate_all_logs():
             # Skip if already evaluated
             if log_filename in evaluated_logs[model_name]:
                 print(f"  Evaluation already exists, skipping: {log_filename}")
-                results.append(evaluated_logs[model_name][log_filename])
                 continue
             
             try:
@@ -459,8 +577,15 @@ def evaluate_all_logs():
                 }
                 
                 # Add to results and track in progress
-                results.append(result)
+                all_results.append(result)
+                model_results[model_name].append(result)
                 evaluated_logs[model_name][log_filename] = result
+                
+                # Immediately write this evaluation to the model's evaluation file
+                update_evaluation_file(model_dir, model_name, result)
+                
+                # Update the summary file with current results
+                update_summary_file(model_dir, model_name, model_results[model_name])
                 
                 # Update progress file to save our work incrementally
                 with open(progress_file, 'w', encoding='utf-8') as f:
@@ -477,18 +602,210 @@ def evaluate_all_logs():
     # Write aggregate results to CSV
     output_file = os.path.join(eval_dir, "evaluation_results.csv")
     with open(output_file, 'w', newline='', encoding='utf-8') as f:
-        if results:
-            fieldnames = results[0].keys()
+        if all_results:
+            fieldnames = all_results[0].keys()
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
-            writer.writerows(results)
+            writer.writerows(all_results)
     
     print(f"\nEvaluation complete. Results written to {output_file}")
     
-    # Generate per-model evaluation files
-    generate_model_evaluation_files(results, eval_dir)
+    # Generate overall model comparison file
+    if model_results:
+        comparison_file = os.path.join(eval_dir, "model_comparison.txt")
+        with open(comparison_file, 'w', encoding='utf-8') as f:
+            f.write("MODEL COMPARISON SUMMARY\n")
+            f.write("=" * 80 + "\n\n")
+            
+            # Table of model performance stats
+            f.write("Model Performance Metrics:\n")
+            f.write("-" * 80 + "\n")
+            f.write(f"{'Model':<25} {'Tasks':<6} {'Correct %':<10} {'Steps':<8} {'Failures':<10} {'Misund.':<8} {'Tokens':<10} {'Time (s)':<10}\n")
+            f.write("-" * 80 + "\n")
+            
+            # Calculate and display stats for each model
+            model_stats = []
+            for model, evals in model_results.items():
+                count = len(evals)
+                correct = sum(1 for e in evals if e["correctness"] == "yes")
+                partial = sum(1 for e in evals if e["correctness"] == "partial")
+                
+                correct_pct = (correct + 0.5 * partial) / count * 100 if count > 0 else 0
+                avg_steps = sum(e["step_count"] for e in evals) / count if count > 0 else 0
+                avg_failures = sum(e["failure_count"] for e in evals) / count if count > 0 else 0
+                avg_misunderstandings = sum(e["misunderstanding_count"] for e in evals) / count if count > 0 else 0
+                avg_tokens = sum(e["total_tokens"] for e in evals) / count if count > 0 else 0
+                avg_time = sum(e["total_time"] for e in evals) / count if count > 0 else 0
+                
+                model_stats.append({
+                    "model": model,
+                    "count": count,
+                    "correct_pct": correct_pct,
+                    "avg_steps": avg_steps,
+                    "avg_failures": avg_failures,
+                    "avg_misunderstandings": avg_misunderstandings,
+                    "avg_tokens": avg_tokens,
+                    "avg_time": avg_time
+                })
+            
+            # Sort models by correctness percentage (descending)
+            model_stats.sort(key=lambda x: x["correct_pct"], reverse=True)
+            
+            # Write the comparison table
+            for stats in model_stats:
+                f.write(f"{stats['model']:<25} {stats['count']:<6} {stats['correct_pct']:.1f}%      {stats['avg_steps']:.1f}    {stats['avg_failures']:.1f}        {stats['avg_misunderstandings']:.1f}      {stats['avg_tokens']:.1f}     {stats['avg_time']:.1f}\n")
+        
+        print(f"Model comparison written to {comparison_file}")
+
+# Test function to evaluate a limited number of logs per folder
+def test_evaluation(max_logs_per_folder=5):
+    """Run a quick evaluation test with a limited number of logs per folder.
+    
+    Args:
+        max_logs_per_folder: Maximum number of log files to process per folder
+    """
+    # Get OpenAI client
+    client = get_openai_client()
+    
+    # Create evaluation directory if it doesn't exist
+    eval_dir = "./evaluation_test"
+    if not os.path.exists(eval_dir):
+        os.makedirs(eval_dir)
+        print(f"Created test evaluation directory: {eval_dir}")
+    
+    # Find all log directories
+    log_dirs = find_log_directories()
+    print(f"Found {len(log_dirs)} log directories: {log_dirs}")
+    
+    # Prepare results storage
+    all_results = []          # All results across all models
+    model_results = {}        # Results organized by model
+    
+    # Process each directory
+    for log_dir in log_dirs:
+        print(f"\nProcessing directory: {log_dir}")
+        log_files = get_log_files(log_dir)[:max_logs_per_folder]  # Limit to max_logs_per_folder
+        print(f"Testing with {len(log_files)} log files (limited to {max_logs_per_folder})")
+        
+        model_name = os.path.basename(log_dir)
+        
+        # Initialize model results if needed
+        if model_name not in model_results:
+            model_results[model_name] = []
+            
+        # Create model directory for evaluation files
+        model_dir = os.path.join(eval_dir, model_name)
+        
+        # Process each log file
+        for i, log_file in enumerate(log_files):
+            log_filename = os.path.basename(log_file)
+            print(f"  Processing file {i+1}/{len(log_files)}: {log_filename}")
+            
+            try:
+                # Parse the log file
+                log_data = parse_log_file(log_file)
+                
+                # Evaluate with Azure OpenAI
+                print("  Evaluating with Azure OpenAI (o3-mini)...")
+                evaluation = evaluate_with_gpt(log_data, client)
+                
+                # Combine log data with evaluation
+                result = {
+                    "model": model_name,
+                    "task": log_data["task"],
+                    "answer": log_data["answer"],
+                    "step_count": log_data["step_count"],
+                    "failure_count": log_data["failure_count"],
+                    "input_tokens": log_data["input_tokens"],
+                    "output_tokens": log_data["output_tokens"],
+                    "total_tokens": log_data["input_tokens"] + log_data["output_tokens"],
+                    "total_time": log_data["total_time"],
+                    "correctness": evaluation["correctness"],
+                    "misunderstanding_count": evaluation["misunderstanding_count"],
+                    "category": evaluation["category"],
+                    "self_confidence": evaluation["self_confidence"],
+                    "explanation": evaluation["explanation"]
+                }
+                
+                # Add to results
+                all_results.append(result)
+                model_results[model_name].append(result)
+                
+                # Immediately write this evaluation to the model's evaluation file
+                update_evaluation_file(model_dir, model_name, result)
+                
+                # Update the summary file with current results
+                update_summary_file(model_dir, model_name, model_results[model_name])
+                
+                print(f"  Evaluation complete: {evaluation['correctness']}")
+                
+                # Add a small delay to avoid hitting API rate limits
+                time.sleep(1)
+                
+            except Exception as e:
+                print(f"  Error processing {log_file}: {e}")
+    
+    # Write aggregate results to CSV
+    output_file = os.path.join(eval_dir, "test_evaluation_results.csv")
+    with open(output_file, 'w', newline='', encoding='utf-8') as f:
+        if all_results:
+            fieldnames = all_results[0].keys()
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(all_results)
+    
+    print(f"\nTest evaluation complete. Results written to {output_file}")
+    
+    # Generate overall model comparison file
+    if model_results:
+        comparison_file = os.path.join(eval_dir, "model_comparison.txt")
+        with open(comparison_file, 'w', encoding='utf-8') as f:
+            f.write("MODEL COMPARISON SUMMARY\n")
+            f.write("=" * 80 + "\n\n")
+            
+            # Table of model performance stats
+            f.write("Model Performance Metrics:\n")
+            f.write("-" * 80 + "\n")
+            f.write(f"{'Model':<25} {'Tasks':<6} {'Correct %':<10} {'Steps':<8} {'Failures':<10} {'Misund.':<8} {'Tokens':<10} {'Time (s)':<10}\n")
+            f.write("-" * 80 + "\n")
+            
+            # Calculate and display stats for each model
+            model_stats = []
+            for model, evals in model_results.items():
+                count = len(evals)
+                correct = sum(1 for e in evals if e["correctness"] == "yes")
+                partial = sum(1 for e in evals if e["correctness"] == "partial")
+                
+                correct_pct = (correct + 0.5 * partial) / count * 100 if count > 0 else 0
+                avg_steps = sum(e["step_count"] for e in evals) / count if count > 0 else 0
+                avg_failures = sum(e["failure_count"] for e in evals) / count if count > 0 else 0
+                avg_misunderstandings = sum(e["misunderstanding_count"] for e in evals) / count if count > 0 else 0
+                avg_tokens = sum(e["total_tokens"] for e in evals) / count if count > 0 else 0
+                avg_time = sum(e["total_time"] for e in evals) / count if count > 0 else 0
+                
+                model_stats.append({
+                    "model": model,
+                    "count": count,
+                    "correct_pct": correct_pct,
+                    "avg_steps": avg_steps,
+                    "avg_failures": avg_failures,
+                    "avg_misunderstandings": avg_misunderstandings,
+                    "avg_tokens": avg_tokens,
+                    "avg_time": avg_time
+                })
+            
+            # Sort models by correctness percentage (descending)
+            model_stats.sort(key=lambda x: x["correct_pct"], reverse=True)
+            
+            # Write the comparison table
+            for stats in model_stats:
+                f.write(f"{stats['model']:<25} {stats['count']:<6} {stats['correct_pct']:.1f}%      {stats['avg_steps']:.1f}    {stats['avg_failures']:.1f}        {stats['avg_misunderstandings']:.1f}      {stats['avg_tokens']:.1f}     {stats['avg_time']:.1f}\n")
+        
+        print(f"Model comparison written to {comparison_file}")
 
 # Run the evaluation if this script is executed directly
 if __name__ == "__main__":
-    evaluate_all_logs()
+    # Comment/uncomment the appropriate line to switch between full evaluation and test
+    test_evaluation(5)  # Run quick test with 5 logs per folder
+    # evaluate_all_logs()  # Run full evaluation
 
