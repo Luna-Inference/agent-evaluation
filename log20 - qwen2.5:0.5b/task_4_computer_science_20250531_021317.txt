@@ -1,0 +1,94 @@
+
+================================================================================
+Task 4/18: Explain the difference between depth-first search and breadth-first search algorithms.
+Category: Science & Technical Knowledge | Type: computer-science | Difficulty: medium
+================================================================================
+
+╭─────────────────────────────────────────────────────────────────────────────────── New run ───────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                                                                               │
+│ Explain the difference between depth-first search and breadth-first search algorithms.                                                                                        │
+│                                                                                                                                                                               │
+╰─ LiteLLMModel - ollama_chat/qwen2.5:0.5b ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 1 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought: I'll start by defining a function that performs a DFS (Depth-First Search) and then another for BFS (Breadth-First Search). The functions will return a list of nodes,  
+representing the order in which they were visited.                                                                                                                               
+Code:                                                                                                                                                                            
+```py                                                                                                                                                                            
+def dfs(graph, node):                                                                                                                                                            
+    """Perform a depth-first search on the given graph."""                                                                                                                       
+    result = []                                                                                                                                                                  
+    stack = [node]                                                                                                                                                               
+    while len(stack) > 0:                                                                                                                                                        
+        vertex = stack.pop()                                                                                                                                                     
+        result.append(vertex)                                                                                                                                                    
+        for neighbor in graph[vertex]:                                                                                                                                           
+            if neighbor not in stack:                                                                                                                                            
+                stack.append(neighbor)                                                                                                                                           
+    return result                                                                                                                                                                
+                                                                                                                                                                                 
+def bfs(graph, start_node):                                                                                                                                                      
+    """Perform a breadth-first search on the given graph."""                                                                                                                     
+    visited = set()                                                                                                                                                              
+    queue = [start_node]                                                                                                                                                         
+    while len(queue) > 0:                                                                                                                                                        
+        vertex = queue.pop(0)                                                                                                                                                    
+        if vertex not in visited:                                                                                                                                                
+            visited.add(vertex)                                                                                                                                                  
+            for neighbor in graph[vertex]:                                                                                                                                       
+                if neighbor not in visited:                                                                                                                                      
+                    queue.append(neighbor)                                                                                                                                       
+    return visited                                                                                                                                                               
+```                                                                                                                                                                              
+ ─ Executing parsed code: ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  def dfs(graph, node):                                                                                                                                                          
+      """Perform a depth-first search on the given graph."""                                                                                                                     
+      result = []                                                                                                                                                                
+      stack = [node]                                                                                                                                                             
+      while len(stack) > 0:                                                                                                                                                      
+          vertex = stack.pop()                                                                                                                                                   
+          result.append(vertex)                                                                                                                                                  
+          for neighbor in graph[vertex]:                                                                                                                                         
+              if neighbor not in stack:                                                                                                                                          
+                  stack.append(neighbor)                                                                                                                                         
+      return result                                                                                                                                                              
+                                                                                                                                                                                 
+  def bfs(graph, start_node):                                                                                                                                                    
+      """Perform a breadth-first search on the given graph."""                                                                                                                   
+      visited = set()                                                                                                                                                            
+      queue = [start_node]                                                                                                                                                       
+      while len(queue) > 0:                                                                                                                                                      
+          vertex = queue.pop(0)                                                                                                                                                  
+          if vertex not in visited:                                                                                                                                              
+              visited.add(vertex)                                                                                                                                                
+              for neighbor in graph[vertex]:                                                                                                                                     
+                  if neighbor not in visited:                                                                                                                                    
+                      queue.append(neighbor)                                                                                                                                     
+      return visited                                                                                                                                                             
+ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Out: <function create_function.<locals>.new_func at 0x77156f8b85e0>
+[Step 1: Duration 3.94 seconds| Input tokens: 2,120 | Output tokens: 213]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Step 2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output message of the LLM: ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Thought: The DFS function is returning a list of nodes, while the BFS function returns a set of visited nodes.                                                                   
+Code:                                                                                                                                                                            
+```py                                                                                                                                                                            
+final_answer(f"The difference between depth-first search and breadth-first search algorithms is that in depth-first search (DFS), we visit all vertices at each level first      
+before moving on to adjacent vertices. Each time we return from one level, we go back up the tree, so it explores a level before exploring another level. On the other hand, BFS 
+visits all nodes in an order based on the pre-order traversal of the graph and guarantees that every node is visited exactly once before returning to the root node.")           
+```                                                                                                                                                                              
+ ─ Executing parsed code: ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+  final_answer(f"The difference between depth-first search and breadth-first search algorithms is that in depth-first search (DFS), we visit all vertices at each level first    
+  before moving on to adjacent vertices. Each time we return from one level, we go back up the tree, so it explores a level before exploring another level. On the other hand,   
+  BFS visits all nodes in an order based on the pre-order traversal of the graph and guarantees that every node is visited exactly once before returning to the root node.")     
+ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+Out - Final answer: The difference between depth-first search and breadth-first search algorithms is that in depth-first search (DFS), we visit all vertices at each level first 
+before moving on to adjacent vertices. Each time we return from one level, we go back up the tree, so it explores a level before exploring another level. On the other hand, BFS 
+visits all nodes in an order based on the pre-order traversal of the graph and guarantees that every node is visited exactly once before returning to the root node.
+[Step 2: Duration 2.79 seconds| Input tokens: 4,721 | Output tokens: 346]
+
+Output:
+The difference between depth-first search and breadth-first search algorithms is that in depth-first search (DFS), we visit all vertices at each level first before moving on to adjacent vertices. Each time we return from one level, we go back up the tree, so it explores a level before exploring another level. On the other hand, BFS visits all nodes in an order based on the pre-order traversal of the graph and guarantees that every node is visited exactly once before returning to the root node.
+
+Task 4 complete.
+------------------------------------------------------------

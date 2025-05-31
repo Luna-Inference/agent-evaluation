@@ -9,6 +9,7 @@ from smolagents import CodeAgent, LiteLLMModel
 from openai import AzureOpenAI
 import litellm
 litellm.drop_params=True
+litellm.debug=True
 # Disable colored output for most libraries
 os.environ["NO_COLOR"] = "1"
 os.environ["CLICOLOR"] = "0"
@@ -29,14 +30,14 @@ def strip_ansi_codes(text):
 # Model setup with Azure OpenAI
 with open("secrets.json", "r") as f:
     secrets = json.load(f)
-    subscription_key = secrets['azure_openai']
+    subscription_key = secrets['perplexity_api_key']
 
 os.environ['PERPLEXITYAI_API_KEY'] = secrets['perplexity_api_key']
 
 # Initialize the Azure OpenAI client
 model = LiteLLMModel(
     model_id="perplexity/sonar-pro",
-    # api_key=subscription_key,
+    api_key=subscription_key,
     # api_base=endpoint,
     # api_version="2025-01-01-preview"
 )
@@ -87,7 +88,7 @@ except Exception as e:
 
 
 # Create log directory if it doesn't exist
-LOG_DIR = "./log13 - sonar-pro"
+LOG_DIR = "./log14 - r1-1776"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Generate a unique log filename for each task
