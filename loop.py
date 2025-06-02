@@ -22,7 +22,7 @@ def strip_ansi_codes(text):
 
 # Model setup (same as run.py)
 model = LiteLLMModel(
-    model_id="ollama_chat/qwen2.5-coder:1.5b",
+    model_id="ollama_chat/hf.co/allenai/OLMo-2-0425-1B-Instruct-GGUF:Q4_K_M",
     api_base="http://localhost:11434",
     api_key="YOUR_API_KEY",
     num_ctx=8000,
@@ -74,7 +74,7 @@ except Exception as e:
 
 
 # Create log directory if it doesn't exist
-LOG_DIR = "./log29 - qwen2.5-coder:1.5b"
+LOG_DIR = "./log31 - olmo2-1b"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Generate a unique log filename for each task

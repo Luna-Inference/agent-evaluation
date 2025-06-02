@@ -22,8 +22,8 @@ def strip_ansi_codes(text):
 
 # Model setup (same as run.py)
 model = LiteLLMModel(
-    model_id="ollama_chat/qwen3:1.7b",
-    api_base="http://100.65.247.48:11434",
+    model_id="ollama_chat/starcoder2",
+    api_base="http://100.98.120.32:11434",
     api_key="YOUR_API_KEY",
     num_ctx=30000,
 )
@@ -74,7 +74,7 @@ except Exception as e:
 
 
 # Create log directory if it doesn't exist
-LOG_DIR = "./log30 - qwen3:1.7b"
+LOG_DIR = "./log32 - starcoder"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Generate a unique log filename for each task
